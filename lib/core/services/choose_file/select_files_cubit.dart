@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class ChooseFileCubit extends Cubit<List<File>> {
-  ChooseFileCubit() : super(List.unmodifiable([]));
+class SelectFilesCubit extends Cubit<List<File>> {
+  SelectFilesCubit() : super(List.unmodifiable([]));
 
   void addFiles() async {
     final files = await FilePicker.platform.pickFiles();
