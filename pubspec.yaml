@@ -37,6 +37,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   dio: ^5.9.1
   file_picker: ^10.3.10
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
