@@ -7,7 +7,9 @@ class SelectFilesCubit extends Cubit<List<File>> {
   SelectFilesCubit() : super(List.unmodifiable([]));
 
   void addFiles() async {
-    final files = await FilePicker.platform.pickFiles();
+    final files = await FilePicker.platform.pickFiles(
+      allowMultiple: true
+    );
     emit(
       List.unmodifiable([...state, ...files?.paths.map((e) => File(e!)) ?? []]),
     );
