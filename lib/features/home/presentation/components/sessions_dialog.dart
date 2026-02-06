@@ -33,7 +33,7 @@ class _SessionsDialogState extends State<SessionsDialog> {
           ),
           BlocBuilder<SessionsCubit, SessionsState>(
             builder: (context, state) {
-              final sessions = state.sendSessions;
+              final sessions = state.sessions;
               return Expanded(
                 child: sessions.isNotEmpty
                     ? ListView.separated(
@@ -44,7 +44,7 @@ class _SessionsDialogState extends State<SessionsDialog> {
                           return ListTile(
                             title: Text("Session ${index + 1}"),
                             trailing: IconButton(
-                              onPressed: () => context.read<SessionsCubit>().stopSendSession(session),
+                              onPressed: () => context.read<SessionsCubit>().stopSession(session),
                               icon: Icon(Icons.stop_rounded),
                             ),
                           );

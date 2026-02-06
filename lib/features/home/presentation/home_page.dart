@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
 
@@ -16,12 +17,12 @@ class HomePage extends StatelessWidget {
         leading: BlocBuilder<SessionsCubit, SessionsState>(
           builder: (_, state) {
             return IconButton(
-              onPressed: state.sendSessions.isEmpty
+              onPressed: state.sessions.isEmpty
                   ? null
                   : () => SessionsDialog.show(context),
-              icon: state.sendSessions.isEmpty
+              icon: state.sessions.isEmpty
                   ? SizedBox.shrink()
-                  : Text(state.sendSessions.length.toString()),
+                  : Text(state.sessions.length.toString()),
             );
           },
         ),
@@ -41,7 +42,12 @@ class HomePage extends StatelessWidget {
                 child: Text("Send"),
               ),
               OutlinedButton(onPressed: () {}, child: Text("Send via web")),
-              OutlinedButton(onPressed: () {}, child: Text("Receive")),
+              OutlinedButton(
+                onPressed: () {
+                  ReceiveFilesDialog.show(context);
+                },
+                child: Text("Receive"),
+              ),
             ],
           ),
         ),

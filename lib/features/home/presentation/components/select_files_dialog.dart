@@ -83,7 +83,7 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
                   files: _cubit.state,
                   sessionId: DateTime.now().millisecondsSinceEpoch,
                 );
-                context.read<SessionsCubit>().addSendSession(session);
+                context.read<SessionsCubit>().addSession(session);
                 Navigator.of(context).pop();
               },
               child: Text("Send"),
