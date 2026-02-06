@@ -1,20 +1,19 @@
 part of 'sessions_cubit.dart';
 
 class SessionsState {
-  final List<SendSessionCubit> sendSessions;
+  final List<BaseSession> sessions;
 
-  const SessionsState({this.sendSessions = const []});
+  const SessionsState({this.sessions = const []});
 
-  SessionsState.empty() : sendSessions = const [];
+  SessionsState.empty() : sessions = const [];
 
-  SessionsState addSendSession(SendSessionCubit session) => SessionsState(
-    sendSessions: List.unmodifiable([...sendSessions, session]),
-  );
+  SessionsState addSession(BaseSession session) =>
+      SessionsState(sessions: List.unmodifiable([...sessions, session]));
 
-  SessionsState removeSendSession(SendSessionCubit session) {
+  SessionsState removeSession(BaseSession session) {
     session.close();
     return SessionsState(
-      sendSessions: List.unmodifiable(sendSessions.where((e) => e != session)),
+      sessions: List.unmodifiable(sessions.where((e) => e != session)),
     );
   }
 }

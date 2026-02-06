@@ -9,19 +9,22 @@ final class SendSessionConnected extends SendSessionState {
 
   SendSessionConnected({required this.peerName});
 
-  SendSessionProgressing toProgressing(Map<File, double> progress) {
-    return SendSessionProgressing(progress: progress, peerName: peerName);
+  SendSessionProgressing toProgressing(List<double> progressList) {
+    return SendSessionProgressing(
+      progressList: progressList,
+      peerName: peerName,
+    );
   }
 }
 
 final class SendSessionProgressing extends SendSessionConnected {
-  final Map<File, double> progress;
+  final List<double> progressList;
 
-  SendSessionProgressing({required this.progress, required super.peerName});
+  SendSessionProgressing({required this.progressList, required super.peerName});
 
-  SendSessionProgressing copyWith({Map<File, double>? progress}) {
+  SendSessionProgressing copyWith(int index, double progress) {
     return SendSessionProgressing(
-      progress: progress ?? this.progress,
+      progressList: progressList..[index] = progress,
       peerName: peerName,
     );
   }
