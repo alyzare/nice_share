@@ -3,11 +3,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nice_share/core/services/base_session/base_session.dart';
 
 part 'send_session_state.dart';
 
-class SendSessionCubit extends Cubit<SendSessionState> {
+class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
+  @override
   final List<File> files;
+  @override
   final int sessionId;
 
   SendSessionCubit({required this.files, required this.sessionId})
