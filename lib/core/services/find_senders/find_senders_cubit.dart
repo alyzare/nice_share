@@ -16,7 +16,6 @@ class FindSendersCubit extends Cubit<List<Sender>> {
   Future<void> _initUdpSocket() async {
     _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 12459);
     _subscription = _udpSocket!.listen((event) {
-      print("EVENT $event");
       if (event != RawSocketEvent.read) return;
 
       final datagram = _udpSocket!.receive();

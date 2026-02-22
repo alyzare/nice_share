@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/services/send_session/send_session_cubit.dart';
+import 'package:nice_share/core/models/session_blueprint.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:path/path.dart' as p;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
@@ -79,9 +79,10 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
             ).copyWith(bottom: 8),
             child: FilledButton(
               onPressed: () {
-                final session = SendSessionCubit(
+                final session = SessionBlueprint(
                   files: _cubit.state,
                   sessionId: DateTime.now().millisecondsSinceEpoch,
+                  type: SessionType.send,
                 );
                 context.read<SessionsCubit>().addSession(session);
                 Navigator.of(context).pop();

@@ -14,15 +14,15 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         centerTitle: true,
         title: Text("Nice Share"),
-        leading: BlocBuilder<SessionsCubit, SessionsState>(
+        leading: BlocBuilder<SessionsCubit, int>(
           builder: (_, state) {
             return IconButton(
-              onPressed: state.sessions.isEmpty
-                  ? null
-                  : () => SessionsDialog.show(context),
-              icon: state.sessions.isEmpty
+              onPressed: state == 0 ? null : () => SessionsDialog.show(context),
+              icon: state == 0
                   ? SizedBox.shrink()
-                  : Text(state.sessions.length.toString()),
+                  : Text(
+                      context.read<SessionsCubit>().sessions.length.toString(),
+                    ),
             );
           },
         ),

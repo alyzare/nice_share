@@ -4,6 +4,8 @@ sealed class SendSessionState {}
 
 final class SendSessionBroadcasting extends SendSessionState {}
 
+final class SendSessionAskingPermission extends SendSessionBroadcasting {}
+
 final class SendSessionConnected extends SendSessionState {
   final String peerName;
 
