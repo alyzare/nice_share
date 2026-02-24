@@ -3,12 +3,11 @@ import 'package:nice_share/core/models/session_blueprint.dart';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
 
-part 'sessions_state.dart';
-
 class SessionsCubit extends Cubit<int> {
   final CustomServer server;
+  final String peerName;
 
-  SessionsCubit(this.server) : super(0);
+  SessionsCubit({required this.peerName, required this.server}) : super(0);
 
   final List<BaseSession> sessions = [];
 

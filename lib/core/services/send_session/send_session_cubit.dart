@@ -6,10 +6,11 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/network/custom_server.dart';
+import 'package:nice_share/core/network/handlers/file_handler.dart';
+import 'package:nice_share/core/network/handlers/info_handler.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
-import 'package:nice_share/core/services/send_session/file_handler.dart';
 
-import 'info_handler.dart';
+
 
 part 'send_session_state.dart';
 
@@ -84,7 +85,7 @@ class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
     socket.close();
   }
 
-  Future<String?> _askPermission([String? name]) async {
+  Future<String?> _askPermission(String name) async {
     if (_tokenNotifier.value != null) return null;
     emit(SendSessionAskingPermission());
     try {

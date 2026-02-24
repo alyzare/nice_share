@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:nice_share/core/services/send_session/file_handler.dart';
+import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/services/send_session/send_session_cubit.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -10,7 +10,7 @@ class CustomRouter {
 
   CustomRouter() {
     router
-      ..post('/session/<sessionId>', _sessionHandler)
+      ..get('/session/<sessionId>', _sessionHandler)
       ..get('/session/<sessionId>/<fId>', _fileHandler);
   }
 
@@ -25,8 +25,9 @@ class CustomRouter {
         body: jsonEncode({'message': 'Invalid session id'}),
       );
     }
+    final peerName = request.headers['X-Peer-Name'];
 
-    final info = await infoHandler.getInfo();
+    final info = await infoHandler.getInfo(peerName ?? "No Name");
 
     if (info == null) {
       return Response.forbidden(jsonEncode({"message": "Permission Denied!"}));
