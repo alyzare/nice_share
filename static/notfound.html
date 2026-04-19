@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>404 - Not Found</title>
+    <style>
+        .error-container {
+            text-align: center;
+            padding: 4rem 2rem;
+            max-width: 600px;
+            margin: 10vh auto;
+            background: #444;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #ff4444;
+            margin: 0;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .error-message {
+            font-size: 1.5rem;
+            color: #fff;
+            margin: 1rem 0 2rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .back-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .back-button:active {
+            transform: translateY(0);
+        }
+
+        /* Subtle animation for the 404 text */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="error-container">
+        <h1 class="error-code floating">404</h1>
+        <p class="error-message">Oops! The file or page you're looking for doesn't exist.</p>
+        <a href="/" class="back-button">Back to Home</a>
+    </div>
+</div>
+</body>
+</html>

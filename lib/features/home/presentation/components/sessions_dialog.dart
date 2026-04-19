@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
 
 class SessionsDialog extends StatefulWidget {
   const SessionsDialog._();
@@ -42,7 +43,11 @@ class _SessionsDialogState extends State<SessionsDialog> {
                         itemBuilder: (context, index) {
                           final session = sessions[index];
                           return ListTile(
-                            title: Text("Session ${index + 1}"),
+                            title: Text(
+                              session is WebSessionCubit
+                                  ? "WebSession: ${session.sessionId}"
+                                  : "Session ${index + 1}",
+                            ),
                             trailing: IconButton(
                               onPressed: session.close,
                               icon: Icon(Icons.stop_rounded),

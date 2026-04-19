@@ -4,9 +4,11 @@ import 'dart:io';
 class FileHandler {
   final File _file;
 
-  FileHandler({required File file}) : _file = file;
+  FileHandler({required File file}) : _file = file {
+    fileLength = _file.lengthSync();
+  }
 
-  late final fileLength = _file.lengthSync();
+  late final int fileLength;
 
   final _progressController = StreamController<double>.broadcast();
 
@@ -23,4 +25,7 @@ class FileHandler {
   bool get fileExists => _file.existsSync();
 
   String get fileName => _file.uri.pathSegments.last;
+
+  static List<FileHandler> list(List<File> files) =>
+      files.map((e) => FileHandler(file: e)).toList();
 }

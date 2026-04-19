@@ -4,21 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/session_blueprint.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
 import 'package:path/path.dart' as p;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
 
 class SelectFilesDialog extends StatefulWidget {
-  const SelectFilesDialog._();
+  final bool isWeb;
+  const SelectFilesDialog._([this.isWeb = false]);
 
   @override
   State<SelectFilesDialog> createState() => _SelectFilesDialogState();
 
-  static Future<void> show(BuildContext context) {
-    return showDialog(
-      context: context,
-      builder: (context) => const SelectFilesDialog._(),
-    );
-  }
+  static void show(BuildContext context) =>
+      showDialog(context: context, builder: (_) => const SelectFilesDialog._());
+
+  static void webShow(BuildContext context) =>
+      showDialog(context: context, builder: (_) => SelectFilesDialog._(true));
 }
 
 class _SelectFilesDialogState extends State<SelectFilesDialog> {
@@ -81,8 +82,10 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
               onPressed: () {
                 final session = SessionBlueprint(
                   files: _cubit.state,
-                  sessionId: DateTime.now().millisecondsSinceEpoch,
-                  type: SessionType.send,
+                  sessionId: widget.isWeb
+                      ? WebSessionCubit.newId
+                      : DateTime.now().millisecondsSinceEpoch,
+                  type: widget.isWeb ? .webShare : .send,
                 );
                 context.read<SessionsCubit>().addSession(session);
                 Navigator.of(context).pop();

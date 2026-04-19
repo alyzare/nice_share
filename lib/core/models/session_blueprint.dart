@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
 import 'package:nice_share/core/services/send_session/send_session_cubit.dart';
+import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
 
 class SessionBlueprint {
   final int sessionId;
@@ -25,8 +26,12 @@ class SessionBlueprint {
       ),
       // TODO: Handle this case.
       SessionType.receive => throw UnimplementedError(),
-      // TODO: Handle this case.
-      SessionType.webShare => throw UnimplementedError(),
+
+      SessionType.webShare => WebSessionCubit(
+        files: files ?? [],
+        sessionId: sessionId,
+        server: server,
+      ),
       // TODO: Handle this case.
       SessionType.webReceive => throw UnimplementedError(),
     };

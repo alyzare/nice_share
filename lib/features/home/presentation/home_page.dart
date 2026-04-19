@@ -4,6 +4,7 @@ import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
+import 'package:nice_share/features/log/log_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -26,6 +27,20 @@ class HomePage extends StatelessWidget {
             );
           },
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LogPage(
+                    logs: context.read<SessionsCubit>().server.requestLogs,
+                  ),
+                ),
+              );
+            },
+            icon: Icon(Icons.developer_mode_rounded),
+          ),
+        ],
       ),
       body: Center(
         child: SizedBox(
@@ -41,7 +56,12 @@ class HomePage extends StatelessWidget {
                 },
                 child: Text("Send"),
               ),
-              OutlinedButton(onPressed: () {}, child: Text("Send via web")),
+              OutlinedButton(
+                onPressed: () {
+                  SelectFilesDialog.webShow(context);
+                },
+                child: Text("Send via web"),
+              ),
               OutlinedButton(
                 onPressed: () {
                   ReceiveFilesDialog.show(context);

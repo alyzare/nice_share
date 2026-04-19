@@ -31,7 +31,7 @@ class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
     server.addSendHandler(
       sessionId,
       .new(
-        fileHandlers: files.map((e) => FileHandler(file: e)).toList(),
+        fileHandlers: FileHandler.list(files),
         infoHandler: InfoHandler(
           info: getInfo(),
           askPermission: _askPermission,
@@ -122,23 +122,5 @@ class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
     _tokenNotifier.dispose();
 
     return super.close();
-  }
-}
-
-class SendHandler {
-  final List<FileHandler> _fileHandlers;
-  final InfoHandler infoHandler;
-  final ValueNotifier<String?> _tokenNotifier;
-
-  SendHandler({
-    required List<FileHandler> fileHandlers,
-    required this.infoHandler,
-    required ValueNotifier<String?> tokenNotifier,
-  }) : _fileHandlers = fileHandlers,
-       _tokenNotifier = tokenNotifier;
-
-  FileHandler getFile({required int id, required String token}) {
-    if (_tokenNotifier.value != token) throw "Wrong token";
-    return _fileHandlers[id];
   }
 }

@@ -11,3 +11,13 @@ Future<String> getDeviceName() async {
   }
   return "";
 }
+
+String formattedSize(int size) {
+  for (final unit in ["B", "KB", "MB", "GB"]) {
+    if (size < 1024) {
+      return "${size.toStringAsFixed(2)} $unit";
+    }
+    size ~/= 1024;
+  }
+  return "${size.toStringAsFixed(2)} TB";
+}

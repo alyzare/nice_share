@@ -2,17 +2,22 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:nice_share/core/services/send_session/send_session_cubit.dart';
+import 'package:flutter/foundation.dart';
+import 'package:nice_share/core/network/handlers/web_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 
 import 'custom_router.dart';
+import 'handlers/send_handlers.dart';
 
 class CustomServer {
   int get port => _server.port;
 
   final HttpServer _server;
   final CustomRouter _router;
+
+  final StreamController<String> _logController;
+  Stream<String> get requestLogs => _logController.stream;
 
   void addSendHandler(int sessionId, SendHandler sendHandler) {
     _router.handlers[sessionId] = sendHandler;
@@ -23,11 +28,15 @@ class CustomServer {
   static Future<CustomServer> start() async {
     try {
       final router = CustomRouter();
+      final logController = StreamController<String>.broadcast();
       final handler = Pipeline()
-          .addMiddleware(logRequests())
+          .addMiddleware(
+            logRequests(logger: (msg, isError) => logController.add(msg)),
+          )
           .addHandler(router.router.call);
-      final server = await serve(handler, InternetAddress.anyIPv4, 0);
-      return CustomServer._(server, router);
+      final server = await serve(handler, InternetAddress.anyIPv4, 8088);
+      debugPrint("Server is running on port ${server.port}");
+      return CustomServer._(server, router, logController);
     } catch (e) {
       log(e.toString());
       rethrow;
@@ -36,9 +45,14 @@ class CustomServer {
 
   Future<void> close() async {
     await _server.close();
+    await _logController.close();
   }
 
-  CustomServer._(HttpServer server, CustomRouter router)
-    : _server = server,
-      _router = router;
+  CustomServer._(this._server, this._router, this._logController);
+
+  void addWebHandler(int sessionId, WebHandler handler) {
+    _router.webHandlers[sessionId] = handler;
+  }
+
+  void removeWebHandler(int sessionId) => _router.webHandlers.remove(sessionId);
 }
