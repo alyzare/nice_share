@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
@@ -5,9 +7,22 @@ import 'package:nice_share/features/home/presentation/components/receive_files_d
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
 import 'package:nice_share/features/log/log_page.dart';
+import 'package:permission_handler/permission_handler.dart'
+    as permission_handler;
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    _checkPermission();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,10 +83,40 @@ class HomePage extends StatelessWidget {
                 },
                 child: Text("Receive"),
               ),
+              Center(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: "Port: "),
+                      TextSpan(
+                        text: context
+                            .read<SessionsCubit>()
+                            .server
+                            .port
+                            .toString(),
+                        style: TextStyle(fontWeight: .bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _checkPermission() async {
+    if (!Platform.isAndroid) return;
+
+    final permissionStatus =
+        await permission_handler.Permission.manageExternalStorage.status;
+
+    if (permissionStatus == permission_handler.PermissionStatus.granted) return;
+
+    final result = await permission_handler.Permission.manageExternalStorage
+        .request();
+    debugPrint(result.toString());
   }
 }

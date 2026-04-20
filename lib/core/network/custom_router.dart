@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:nice_share/core/models/file_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/web_handler.dart';
 import 'package:nice_share/core/utils.dart';
@@ -13,15 +15,15 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'handlers/send_handlers.dart';
 
 class CustomRouter {
-  final router = shelf.Router();
+  late final router = shelf.Router(notFoundHandler: _notFoundHandler);
   CustomRouter() {
     router
       ..get('/session/<sessionId>', _sessionHandler)
       ..get('/session/<sessionId>/<fId>', _fileHandler)
       ..get('/web/<sessionId>/<fName>', _webFileHandler)
       ..get('/web/<sessionId>', _webHandler)
-      ..post("/web/<sessionId>", _uploadHandler)
-      ..get('/static/<file>', _staticHandler);
+      ..get('/static/<file>', _staticHandler)
+      ..post("/web/<sessionId>", _uploadHandler);
   }
 
   final Map<int, SendHandler> handlers = {};
@@ -201,21 +203,16 @@ class CustomRouter {
       );
     }
 
-    //load index.html
-    final file = File("static/index.html");
-    if (!file.existsSync()) {
-      return Response.notFound(jsonEncode({"message": "File not found"}));
-    }
-
-    final content = file.readAsStringSync();
+    final content = await rootBundle.loadString("assets/static/index.html");
     final stringBuilder = StringBuffer()..write('<ul>');
 
     for (final fileHandler in handler.files.values) {
       final fileName = fileHandler.fileName;
       final fileSize = formattedSize(fileHandler.fileLength);
 
+      final encodedName = Uri.encodeComponent(fileName);
       stringBuilder.write(
-        '<li><a href="${null /*todo*/}"><span class="name">📄 $fileName</span><span class="meta">$fileSize</span></a></li>',
+        '<li><a href="/web/$sessionId/$encodedName"><span class="name">📄 $fileName</span><span class="meta">$fileSize</span></a></li>',
       );
     }
     stringBuilder.write('</ul>');
@@ -251,7 +248,7 @@ class CustomRouter {
 
     final fileName = Uri.decodeComponent(fileNameEncoded);
 
-    final downloadsDir = await path_provider.getDownloadsDirectory();
+    final downloadsDir = await _getDownloadDirectory();
     if (downloadsDir == null) {
       return Response.internalServerError(
         body: jsonEncode({'message': 'Cannot find downloads directory'}),
@@ -259,7 +256,7 @@ class CustomRouter {
     }
 
     final saveDir = Directory(
-      path.join(downloadsDir.path, 'nice_share', 'web_$sessionId'),
+      path.join(downloadsDir.path, 'Nice Share', MyFileType.fromExtension(fileName.split(".").last).dirName),
     );
     if (!await saveDir.exists()) {
       await saveDir.create(recursive: true);
@@ -283,13 +280,15 @@ class CustomRouter {
     }
   }
 
-  Response _staticHandler(Request request, String file) {
+  Future<Response> _staticHandler(Request request, String file) async {
     if (file.contains('/') || file.contains(r'\') || file.contains('..')) {
       return Response.forbidden('Invalid path');
     }
 
-    final f = File('static/$file');
-    if (!f.existsSync()) {
+    final String content;
+    try {
+      content = await rootBundle.loadString('assets/static/$file');
+    } catch (_) {
       return Response.notFound('Not found');
     }
 
@@ -301,12 +300,35 @@ class CustomRouter {
     } else if (file.endsWith('.html')) {
       contentType = 'text/html';
     }
+    final bytes = utf8.encode(content);
     return Response.ok(
-      f.openRead(),
+      bytes,
       headers: {
         'Content-Type': contentType,
-        'Content-Length': f.lengthSync().toString(),
+        'Content-Length': bytes.length.toString(),
       },
     );
   }
+
+  Future<Response> _notFoundHandler(Request request) async {
+    try {
+      final content = await rootBundle.loadString(
+        'assets/static/notfound.html',
+      );
+      final bytes = utf8.encode(content);
+      return Response.notFound(
+        bytes,
+        headers: {
+          'Content-Type': 'text/html',
+          'Content-Length': bytes.length.toString(),
+        },
+      );
+    } catch (_) {
+      return Response.notFound('Not found');
+    }
+  }
+
+  Future<Directory?> _getDownloadDirectory() async => Platform.isAndroid
+      ? Directory("/storage/emulated/0")
+      : await path_provider.getDownloadsDirectory();
 }
