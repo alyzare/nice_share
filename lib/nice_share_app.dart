@@ -9,6 +9,8 @@ class NiceShareApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
       home: HomePage(),
     );
   }
