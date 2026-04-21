@@ -256,7 +256,11 @@ class CustomRouter {
     }
 
     final saveDir = Directory(
-      path.join(downloadsDir.path, 'Nice Share', MyFileType.fromExtension(fileName.split(".").last).dirName),
+      path.join(
+        downloadsDir.path,
+        'Nice Share',
+        MyFileType.fromExtension(fileName.split(".").last).dirName,
+      ),
     );
     if (!await saveDir.exists()) {
       await saveDir.create(recursive: true);
@@ -311,6 +315,11 @@ class CustomRouter {
   }
 
   Future<Response> _notFoundHandler(Request request) async {
+    if (webHandlers.length == 1 &&
+        request.method == "GET" &&
+        request.url.toString().isEmpty) {
+      return Response.found("web/${webHandlers.keys.first}");
+    }
     try {
       final content = await rootBundle.loadString(
         'assets/static/notfound.html',

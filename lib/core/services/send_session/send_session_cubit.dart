@@ -10,8 +10,6 @@ import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/info_handler.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
 
-
-
 part 'send_session_state.dart';
 
 class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
@@ -40,9 +38,6 @@ class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
       ),
     );
   }
-
-  @override
-  final isClosedNotifier = ValueNotifier(false);
 
   Map<String, Object> getInfo() => {
     "sessionId": sessionId,
@@ -117,8 +112,6 @@ class SendSessionCubit extends Cubit<SendSessionState> with BaseSession {
   Future<void> close() {
     _udpTimer.cancel();
     server.removeSendHandler(sessionId);
-    isClosedNotifier.value = true;
-    isClosedNotifier.dispose();
     _tokenNotifier.dispose();
 
     return super.close();

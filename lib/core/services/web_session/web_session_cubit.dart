@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
@@ -20,7 +18,7 @@ class WebSessionCubit extends Cubit<Object?> with BaseSession {
     required this.sessionId,
     required this.server,
   }) : super(null) {
-    takenIds.add(sessionId);
+    _takenIds.add(sessionId);
     server.addWebHandler(
       sessionId,
       .new(
@@ -31,21 +29,11 @@ class WebSessionCubit extends Cubit<Object?> with BaseSession {
     );
   }
 
-  @override
-  final isClosedNotifier = ValueNotifier(false);
-
-  @override
-  Future<void> close() {
-    isClosedNotifier.value = true;
-    isClosedNotifier.dispose();
-    return super.close();
-  }
-
-  static final List<int> takenIds = [];
+  static final List<int> _takenIds = [];
 
   static int get newId {
     int id = 0;
-    while (takenIds.contains(id)) {
+    while (_takenIds.contains(id)) {
       id++;
     }
     return id;

@@ -20,11 +20,12 @@ class _LogPageState extends State<LogPage> {
           if (asyncSnapshot.hasData) {
             _logs.add(asyncSnapshot.data!);
           }
-          return ListView.builder(
+          return ListView.separated(
             itemBuilder: (context, index) {
               return Text(_logs[index]);
             },
             itemCount: _logs.length,
+            separatorBuilder: (_, _) => Divider(),
           );
         },
       ),
