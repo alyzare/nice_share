@@ -1,10 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/session_blueprint.dart';
+import 'package:nice_share/core/services/choose_file/select_file_state.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
+import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
 
@@ -42,19 +42,25 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
               ),
             ),
           ),
-          BlocBuilder<SelectFilesCubit, List<File>>(
+          BlocBuilder<SelectFilesCubit, SelectFileState>(
             bloc: _cubit,
             builder: (context, state) {
               return Expanded(
-                child: state.isNotEmpty
+                child: state.files.isNotEmpty
                     ? ListView.separated(
-                        itemCount: state.length,
+                        itemCount:
+                            state.files.length +
+                            (state is LoadingFiles ? 1 : 0),
                         separatorBuilder: (context, index) => Divider(),
                         itemBuilder: (context, index) {
-                          final file = state[index];
+                          if (state is LoadingFiles &&
+                              index == state.files.length) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+                          final file = state.files[index];
                           return ListTile(
                             title: Text(p.basename(file.path)),
-                            subtitle: Text(file.path),
+                            subtitle: Text(formattedSize(file.lengthSync())),
                             trailing: IconButton(
                               onPressed: () => _cubit.removeFile(file),
                               icon: Icon(Icons.close),
@@ -62,7 +68,11 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
                           );
                         },
                       )
-                    : Center(child: Text("Empty")),
+                    : Center(
+                        child: state is LoadingFiles
+                            ? CircularProgressIndicator()
+                            : Text("Empty"),
+                      ),
               );
             },
           ),
@@ -81,7 +91,7 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
             child: FilledButton(
               onPressed: () {
                 final session = SessionBlueprint(
-                  files: _cubit.state,
+                  files: _cubit.state.files,
                   sessionId: widget.isWeb
                       ? WebSessionCubit.newId
                       : DateTime.now().millisecondsSinceEpoch,

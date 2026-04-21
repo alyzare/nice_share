@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+import 'package:nice_share/features/home/presentation/components/cached_files.dart';
 import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
@@ -100,6 +101,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              if (Platform.isAndroid || Platform.isIOS) CachedFilesCount(),
             ],
           ),
         ),

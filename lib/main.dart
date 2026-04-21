@@ -5,6 +5,7 @@ import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:nice_share/nice_share_app.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {
   final server = await CustomServer.start();
@@ -15,6 +16,10 @@ Future<void> main() async {
     peerName = await getDeviceName();
     await prefBox.put('name', peerName);
   }
+
+  getApplicationCacheDirectory().then((cacheDir) {
+    cacheDir.delete(recursive: true);
+  });
 
   runApp(
     BlocProvider(

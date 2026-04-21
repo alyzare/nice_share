@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/network/request_helper.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
@@ -32,7 +30,4 @@ class ReceiveSessionCubit extends Cubit<ReceiveSessionState> with BaseSession {
         .map((path) => File('$basePath/${pathlib.basename(path)}'))
         .toList();
   }
-
-  @override
-  final isClosedNotifier = ValueNotifier(false);
 }
