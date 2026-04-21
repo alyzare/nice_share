@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
-import 'package:nice_share/features/home/presentation/components/cached_files.dart';
 import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
+import 'package:nice_share/features/home/presentation/components/select_files_bottom_sheet.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
 import 'package:nice_share/features/log/log_page.dart';
@@ -19,6 +19,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final SessionsCubit _sessionsCubit = context.read();
+
   @override
   void initState() {
     _checkPermission();
@@ -37,9 +39,7 @@ class _HomePageState extends State<HomePage> {
               onPressed: state == 0 ? null : () => SessionsDialog.show(context),
               icon: state == 0
                   ? SizedBox.shrink()
-                  : Text(
-                      context.read<SessionsCubit>().sessions.length.toString(),
-                    ),
+                  : Text(_sessionsCubit.sessions.length.toString()),
             );
           },
         ),
@@ -48,9 +48,8 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => LogPage(
-                    logs: context.read<SessionsCubit>().server.requestLogs,
-                  ),
+                  builder: (context) =>
+                      LogPage(logs: _sessionsCubit.server.requestLogs),
                 ),
               );
             },
@@ -67,14 +66,22 @@ class _HomePageState extends State<HomePage> {
             spacing: 10,
             children: [
               OutlinedButton(
-                onPressed: () {
-                  SelectFilesDialog.show(context);
+                onPressed: () async {
+                  final session = await (Platform.isAndroid || Platform.isIOS
+                      ? SelectFilesBottomSheet.show(context)
+                      : SelectFilesDialog.show(context));
+                  if (session == null) return;
+                  _sessionsCubit.addSession(session);
                 },
                 child: Text("Send"),
               ),
               OutlinedButton(
-                onPressed: () {
-                  SelectFilesDialog.webShow(context);
+                onPressed: () async {
+                  final session = await (Platform.isAndroid || Platform.isIOS
+                      ? SelectFilesBottomSheet.show(context, isWeb: true)
+                      : SelectFilesDialog.show(context, isWeb: true));
+                  if (session == null) return;
+                  _sessionsCubit.addSession(session);
                 },
                 child: Text("Send via web"),
               ),
@@ -101,7 +108,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              if (Platform.isAndroid || Platform.isIOS) CachedFilesCount(),
             ],
           ),
         ),

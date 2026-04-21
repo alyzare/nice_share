@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/session_blueprint.dart';
 import 'package:nice_share/core/services/choose_file/select_file_state.dart';
-import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
-import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
@@ -15,15 +13,15 @@ class SelectFilesDialog extends StatefulWidget {
   @override
   State<SelectFilesDialog> createState() => _SelectFilesDialogState();
 
-  static void show(BuildContext context) =>
-      showDialog(context: context, builder: (_) => const SelectFilesDialog._());
-
-  static void webShow(BuildContext context) =>
-      showDialog(context: context, builder: (_) => SelectFilesDialog._(true));
+  static Future<SessionBlueprint?> show(
+    BuildContext context, {
+    bool isWeb = false,
+  }) =>
+      showDialog(context: context, builder: (_) => SelectFilesDialog._(isWeb));
 }
 
 class _SelectFilesDialogState extends State<SelectFilesDialog> {
-  late final _cubit = SelectFilesCubit();
+  late final _cubit = SelectFilesCubit(widget.isWeb);
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +40,14 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
               ),
             ),
           ),
-          BlocBuilder<SelectFilesCubit, SelectFileState>(
+          BlocConsumer<SelectFilesCubit, SelectFileState>(
             bloc: _cubit,
+            listenWhen: (_, current) => current is SessionCreated,
+            listener: (_, state) {
+              if (state is SessionCreated) {
+                Navigator.of(context).pop(state.session);
+              }
+            },
             builder: (context, state) {
               return Expanded(
                 child: state.files.isNotEmpty
@@ -89,17 +93,7 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
               horizontal: 8.0,
             ).copyWith(bottom: 8),
             child: FilledButton(
-              onPressed: () {
-                final session = SessionBlueprint(
-                  files: _cubit.state.files,
-                  sessionId: widget.isWeb
-                      ? WebSessionCubit.newId
-                      : DateTime.now().millisecondsSinceEpoch,
-                  type: widget.isWeb ? .webShare : .send,
-                );
-                context.read<SessionsCubit>().addSession(session);
-                Navigator.of(context).pop();
-              },
+              onPressed: _cubit.startSession,
               child: Text("Send"),
             ),
           ),
