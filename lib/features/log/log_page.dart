@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class LogPage extends StatefulWidget {
-  final Stream<String> logs;
-  const LogPage({super.key, required this.logs});
+  final Stream<String> logStream;
+  const LogPage({super.key, required this.logStream});
 
   @override
   State<LogPage> createState() => _LogPageState();
@@ -15,7 +15,7 @@ class _LogPageState extends State<LogPage> {
     return Scaffold(
       appBar: AppBar(title: Text("Logs")),
       body: StreamBuilder(
-        stream: widget.logs,
+        stream: widget.logStream,
         builder: (context, asyncSnapshot) {
           if (asyncSnapshot.hasData) {
             _logs.add(asyncSnapshot.data!);

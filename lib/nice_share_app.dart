@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nice_share/features/home/presentation/home_page.dart';
+import 'package:nice_share/features/main/presentation/main_shell.dart';
 
 class NiceShareApp extends StatelessWidget {
   const NiceShareApp({super.key});
@@ -11,7 +11,7 @@ class NiceShareApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-      home: HomePage(),
+      home: MainShell(),
     );
   }
 }

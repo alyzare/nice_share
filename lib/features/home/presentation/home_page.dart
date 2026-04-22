@@ -6,8 +6,6 @@ import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_bottom_sheet.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
-import 'package:nice_share/features/home/presentation/components/sessions_dialog.dart';
-import 'package:nice_share/features/log/log_page.dart';
 import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
 
@@ -30,33 +28,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text("Nice Share"),
-        leading: BlocBuilder<SessionsCubit, int>(
-          builder: (_, state) {
-            return IconButton(
-              onPressed: state == 0 ? null : () => SessionsDialog.show(context),
-              icon: state == 0
-                  ? SizedBox.shrink()
-                  : Text(_sessionsCubit.sessions.length.toString()),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      LogPage(logs: _sessionsCubit.server.requestLogs),
-                ),
-              );
-            },
-            icon: Icon(Icons.developer_mode_rounded),
-          ),
-        ],
-      ),
+     
       body: Center(
         child: SizedBox(
           width: 200,
