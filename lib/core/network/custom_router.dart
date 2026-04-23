@@ -20,10 +20,11 @@ class CustomRouter {
     router
       ..get('/session/<sessionId>', _sessionHandler)
       ..get('/session/<sessionId>/<fId>', _fileHandler)
-      ..get('/web/<sessionId>/<fName>', _webFileHandler)
-      ..get('/web/<sessionId>', _webHandler)
+      ..get('/web/session/<sessionId>/<fName>', _webFileHandler)
+      ..get('/web/session/<sessionId>', _webHandler)
       ..get('/static/<file>', _staticHandler)
-      ..post("/web/<sessionId>", _uploadHandler);
+      ..get('/web/list', _webListHandler)
+      ..post("/web/upload", _uploadHandler);
   }
 
   final Map<int, SendHandler> handlers = {};
@@ -212,33 +213,52 @@ class CustomRouter {
 
       final encodedName = Uri.encodeComponent(fileName);
       stringBuilder.write(
-        '<li><a href="/web/$sessionId/$encodedName"><span class="name">📄 $fileName</span><span class="meta">$fileSize</span></a></li>',
+        '<li><a href="/web/session/$sessionId/$encodedName"><span class="name">📄 $fileName</span><span class="meta">$fileSize</span></a></li>',
       );
     }
     stringBuilder.write('</ul>');
     final listHtml = stringBuilder.toString();
-    final finalContent = content.replaceFirst("<dart/>", listHtml);
+    final finalContent = content
+        .replaceFirst("<dart_title />", "<h2>Nice Share</h2>")
+        .replaceAll(
+          "<dart_form />",
+          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
+        )
+        .replaceFirst("<dart />", listHtml)
+        .replaceFirst(
+          "<dart_script />",
+          '<script src="/static/upload.js" defer></script>',
+        );
 
     return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
   }
 
-  Future<Response> _uploadHandler(Request request, String sessionId) async {
-    final id = int.tryParse(sessionId);
+  Future<Response> _webListHandler(Request request) async {
+    final content = await rootBundle.loadString("assets/static/index.html");
 
-    if (id == null) {
-      return Response.badRequest(
-        body: jsonEncode({'message': 'Invalid session id'}),
+    final stringBuilder = StringBuffer()..write('<ul>');
+
+    for (final key in webHandlers.keys) {
+      stringBuilder.write(
+        '<li><a href="/web/session/$key"><span class="name">Session: $key</span></a></li>',
       );
     }
+    stringBuilder.write('</ul>');
+    final listHtml = stringBuilder.toString();
+    final finalContent = content
+        .replaceFirst("<dart_title />", "<h2>Sessions</h2>")
+        .replaceFirst("<dart />", listHtml)
+        .replaceFirst("<dart_script />", 
+          '<script src="/static/upload.js" defer></script>')
+        .replaceAll(
+          "<dart_form />",
+          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
+        );
 
-    final handler = webHandlers[id];
+    return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
+  }
 
-    if (handler == null) {
-      return Response.badRequest(
-        body: jsonEncode({'message': 'Invalid session id'}),
-      );
-    }
-
+  Future<Response> _uploadHandler(Request request) async {
     final fileNameEncoded = request.headers['x-file-name'];
     if (fileNameEncoded == null) {
       return Response.badRequest(
@@ -315,10 +335,11 @@ class CustomRouter {
   }
 
   Future<Response> _notFoundHandler(Request request) async {
-    if (webHandlers.length == 1 &&
-        request.method == "GET" &&
-        request.url.toString().isEmpty) {
-      return Response.found("web/${webHandlers.keys.first}");
+    if (request.method == "GET" &&
+        (request.url.path.isEmpty || request.url.path == "web")) {
+      return webHandlers.length == 1
+          ? Response.found("web/session/${webHandlers.keys.first}")
+          : Response.found("web/list");
     }
     try {
       final content = await rootBundle.loadString(

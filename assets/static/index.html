@@ -1,27 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <dart_script />
+    <title>Nice Share</title>
+  </head>
 
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/upload.js" defer></script>
-    <title>LAN File Share</title>
-</head>
-
-<body>
-
-<div class="container">
-    <h2>LAN File Share</h2>
-
-    <form id="uploadForm">
-        <input type="file" name="file" multiple required>
-        <button>Upload</button>
-    </form>
-
-    <div id="progressContainer" class="progress-container"></div>
-    <dart/>
-</div>
-
-</body>
-
+  <body>
+    <div class="container">
+      <dart_title />
+      <dart_form />
+      <div id="progressContainer" class="progress-container"></div>
+      <dart />
+    </div>
+  </body>
 </html>

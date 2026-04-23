@@ -9,9 +9,6 @@ form.addEventListener("submit", (e) => {
   const files = fileInput.files;
   if (files.length === 0) return;
 
-  const matches = location.pathname.match(/\/web\/(\d+)/);
-  const sessionId = matches ? matches[1] : "";
-
   let completedUploads = 0;
 
   const progressElements = [];
@@ -43,7 +40,7 @@ form.addEventListener("submit", (e) => {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `/web/${sessionId}`);
+    xhr.open("POST", `/web/upload`);
     xhr.setRequestHeader("Content-Type", "application/octet-stream");
     xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
 
