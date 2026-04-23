@@ -25,63 +25,85 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  late final _buttonMap = [
+    _ButtonModel(title: "Send", onTap: _send, icon: Icons.send_rounded),
+    _ButtonModel(
+      title: "Web Share",
+      onTap: _webShare,
+      icon: Icons.language_rounded,
+    ),
+    _ButtonModel(
+      title: "Receive",
+      onTap: _receive,
+      icon: Icons.file_download_rounded,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: Center(
-        child: SizedBox(
-          width: 200,
-          child: Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 10,
-            children: [
-              OutlinedButton(
-                onPressed: () async {
-                  final session = await (Platform.isAndroid || Platform.isIOS
-                      ? SelectFilesBottomSheet.show(context)
-                      : SelectFilesDialog.show(context));
-                  if (session == null) return;
-                  _sessionsCubit.addSession(session);
-                },
-                child: Text("Send"),
-              ),
-              OutlinedButton(
-                onPressed: () async {
-                  final session = await (Platform.isAndroid || Platform.isIOS
-                      ? SelectFilesBottomSheet.show(context, isWeb: true)
-                      : SelectFilesDialog.show(context, isWeb: true));
-                  if (session == null) return;
-                  _sessionsCubit.addSession(session);
-                },
-                child: Text("Send via web"),
-              ),
-              OutlinedButton(
-                onPressed: () {
-                  ReceiveFilesDialog.show(context);
-                },
-                child: Text("Receive"),
-              ),
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: "Port: "),
-                      TextSpan(
-                        text: context
-                            .read<SessionsCubit>()
-                            .server
-                            .port
-                            .toString(),
-                        style: TextStyle(fontWeight: .bold),
+        child: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            Row(
+              mainAxisAlignment: .spaceEvenly,
+              spacing: 10,
+              children: _buttonMap
+                  .map(
+                    (e) => IconButton.filledTonal(
+                      onPressed: e.onTap,
+                      icon: SizedBox(
+                        width: MediaQuery.of(context).size.width / 3 - 40,
+                        child: Column(
+                          spacing: 5,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withAlpha(128),
+                                shape: .circle,
+                              ),
+                              child: Icon(
+                                e.icon,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceBright,
+                              ),
+                            ),
+                            Text(e.title),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            Center(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: "Port: "),
+                    TextSpan(
+                      text: context
+                          .read<SessionsCubit>()
+                          .server
+                          .port
+                          .toString(),
+                      style: TextStyle(fontWeight: .bold),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -99,4 +121,32 @@ class _HomePageState extends State<HomePage> {
         .request();
     debugPrint(result.toString());
   }
+
+  void _send() async {
+    final session = await (Platform.isAndroid || Platform.isIOS
+        ? SelectFilesBottomSheet.show(context)
+        : SelectFilesDialog.show(context));
+    if (session == null) return;
+    _sessionsCubit.addSession(session);
+  }
+
+  void _webShare() async {
+    final session = await (Platform.isAndroid || Platform.isIOS
+        ? SelectFilesBottomSheet.show(context, isWeb: true)
+        : SelectFilesDialog.show(context, isWeb: true));
+    if (session == null) return;
+    _sessionsCubit.addSession(session);
+  }
+
+  void _receive() async {
+    ReceiveFilesDialog.show(context);
+  }
+}
+
+class _ButtonModel {
+  final String title;
+  final VoidCallback onTap;
+  final IconData icon;
+
+  _ButtonModel({required this.title, required this.onTap, required this.icon});
 }
