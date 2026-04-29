@@ -19,7 +19,11 @@ class SessionsPage extends StatelessWidget {
                   return ListTile(
                     title: Text(session.toString()),
                     trailing: IconButton(
-                      onPressed: () {}, //session.close,
+                      onPressed: () {
+                        context.read<SessionsCubit>().closeSession(
+                          session.sessionId,
+                        );
+                      },
                       icon: Icon(Icons.stop_rounded),
                     ),
                   );

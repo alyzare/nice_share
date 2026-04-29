@@ -24,8 +24,7 @@ class SessionsManager {
         // TODO: Handle this case.
         throw UnimplementedError();
       case SessionRemovedEvent():
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        return _removeSession(event);
     }
   }
 
@@ -47,5 +46,16 @@ class SessionsManager {
         _sessions.add(session);
         return session.sessionId;
     }
+  }
+
+  int _removeSession(SessionRemovedEvent event) {
+    final session = _sessions
+        .where((session) => event.id == session.sessionId)
+        .firstOrNull;
+    if (session == null) return -1;
+
+    _sessions.remove(session);
+    session.close();
+    return 0;
   }
 }

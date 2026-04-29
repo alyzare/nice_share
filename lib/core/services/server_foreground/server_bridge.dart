@@ -34,6 +34,11 @@ class ServerBridge {
     return null;
   }
 
+  Future<void> stopSession(int sessionId) async {
+    await _request("session", action: "remove", payload: {"id": sessionId});
+
+  }
+
   Future<List<SessionModel>> getSessions() async {
     final List<Map<String, Object?>> sessionsData =
         await _request("get_all") ?? [];

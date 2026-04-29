@@ -11,13 +11,20 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
 
   ServerBridge get server => ServerBridge.instance;
 
+  void updateSessions() async {
+    final sessions = await server.getSessions();
+    emit(List.unmodifiable(sessions));
+  }
+
   void addSession(SessionModel sessionBlueprint) async {
     final session = await server.createSession(sessionBlueprint);
     if (session != null) emit(List.unmodifiable([...state, session]));
   }
 
-  void updateSessions() async {
-    final sessions = await server.getSessions();
-    emit(List.unmodifiable(sessions));
+  void closeSession(int sessionId) async {
+    try {
+      await server.stopSession(sessionId);
+      emit(List.unmodifiable(state.where((s) => s.sessionId != sessionId)));
+    } catch (_) {}
   }
 }

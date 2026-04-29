@@ -1,15 +1,12 @@
 import 'package:nice_share/core/models/session_model.dart';
 
 sealed class SessionsEvent {
-  final SessionModel session;
-
-  SessionsEvent(this.session);
-
   static SessionsEvent byAction(String action, Map<String, Object?> payload) {
     switch (action) {
       case "add":
         return SessionAddedEvent(SessionModel.fromMap(payload));
       case "remove":
+        return SessionRemovedEvent(payload["id"] as int?);
       case "update":
       default:
         throw UnimplementedError();
@@ -18,13 +15,19 @@ sealed class SessionsEvent {
 }
 
 class SessionAddedEvent extends SessionsEvent {
-  SessionAddedEvent(super.session);
+  final SessionModel session;
+
+  SessionAddedEvent(this.session);
 }
 
 class SessionUpdatedEvent extends SessionsEvent {
-  SessionUpdatedEvent(super.session);
+  final SessionModel session;
+
+  SessionUpdatedEvent(this.session);
 }
 
 class SessionRemovedEvent extends SessionsEvent {
-  SessionRemovedEvent(super.session);
+  final int? id;
+
+  SessionRemovedEvent(this.id);
 }
