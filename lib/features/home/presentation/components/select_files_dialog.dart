@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/models/session_blueprint.dart';
-import 'package:nice_share/core/services/choose_file/select_file_state.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
 
 class SelectFilesDialog extends StatefulWidget {
   final bool isWeb;
+
   const SelectFilesDialog._([this.isWeb = false]);
 
   @override
   State<SelectFilesDialog> createState() => _SelectFilesDialogState();
 
-  static Future<SessionBlueprint?> show(
-    BuildContext context, {
-    bool isWeb = false,
-  }) =>
+  static Future<void> show(BuildContext context, {bool isWeb = false}) =>
       showDialog(context: context, builder: (_) => SelectFilesDialog._(isWeb));
 }
 
 class _SelectFilesDialogState extends State<SelectFilesDialog> {
-  late final _cubit = SelectFilesCubit(widget.isWeb);
+  late final _cubit = SelectFilesCubit(context.read(), widget.isWeb);
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +41,7 @@ class _SelectFilesDialogState extends State<SelectFilesDialog> {
             listenWhen: (_, current) => current is SessionCreated,
             listener: (_, state) {
               if (state is SessionCreated) {
-                Navigator.of(context).pop(state.session);
+                Navigator.of(context).pop();
               }
             },
             builder: (context, state) {

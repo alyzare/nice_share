@@ -28,4 +28,12 @@ class FileHandler {
 
   static List<FileHandler> list(List<File> files) =>
       files.map((e) => FileHandler(file: e)).toList();
+
+  Future<void> close() => _progressController.close();
+
+  void deleteIfCached(Directory cacheDir) {
+    if (_file.path.startsWith(cacheDir.path)) {
+      _file.delete();
+    }
+  }
 }

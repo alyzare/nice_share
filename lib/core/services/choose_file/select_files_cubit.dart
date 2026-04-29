@@ -2,14 +2,18 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/models/session_blueprint.dart';
-import 'package:nice_share/core/services/choose_file/select_file_state.dart';
-import 'package:nice_share/core/services/web_session/web_session_cubit.dart';
+import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+
 import 'package:path_provider/path_provider.dart';
+
+part 'select_file_state.dart';
 
 class SelectFilesCubit extends Cubit<SelectFileState> {
   final bool isWeb;
-  SelectFilesCubit([this.isWeb = false])
+  final SessionsCubit sessionsCubit;
+
+  SelectFilesCubit(this.sessionsCubit, [this.isWeb = false])
     : super(LoadedFiles(files: List.unmodifiable([])));
 
   void addFiles() async {
@@ -50,13 +54,11 @@ class SelectFilesCubit extends Cubit<SelectFileState> {
   }
 
   void startSession() {
-    final session = SessionBlueprint(
-      sessionId: isWeb
-          ? WebSessionCubit.newId
-          : DateTime.now().millisecondsSinceEpoch,
+    final session = SessionModel.blueprint(
       type: isWeb ? .webShare : .send,
       files: state.files,
     );
-    emit(SessionCreated(session: session, files: state.files));
+    sessionsCubit.addSession(session);
+    emit(SessionCreated(files: state.files));
   }
 }

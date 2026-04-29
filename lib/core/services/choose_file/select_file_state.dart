@@ -1,6 +1,4 @@
-import 'dart:io';
-
-import 'package:nice_share/core/models/session_blueprint.dart';
+part of 'select_files_cubit.dart';
 
 sealed class SelectFileState {
   final List<File> files;
@@ -19,8 +17,7 @@ class LoadedFiles extends SelectFileState {
 }
 
 class SessionCreated extends SelectFileState {
-  final SessionBlueprint session;
-  SessionCreated({required this.session, required super.files});
+  SessionCreated({required super.files});
 }
 
 class ErrorLoadingFiles extends LoadedFiles {

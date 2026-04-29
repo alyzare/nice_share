@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/models/session_blueprint.dart';
 import 'package:nice_share/core/utils.dart';
-import 'package:path/path.dart' as p;
-import 'package:nice_share/core/services/choose_file/select_file_state.dart';
+import 'package:path/path.dart' as path;
 import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
 
 class SelectFilesBottomSheet extends StatefulWidget {
@@ -11,22 +9,20 @@ class SelectFilesBottomSheet extends StatefulWidget {
 
   const SelectFilesBottomSheet._([this.isWeb = false]);
 
-  static Future<SessionBlueprint?> show(
-    BuildContext context, {
-    bool isWeb = false,
-  }) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => SelectFilesBottomSheet._(isWeb),
-  );
+  static Future<void> show(BuildContext context, {bool isWeb = false}) =>
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => SelectFilesBottomSheet._(isWeb),
+      );
 
   @override
   State<SelectFilesBottomSheet> createState() => _SelectFilesBottomSheetState();
 }
 
 class _SelectFilesBottomSheetState extends State<SelectFilesBottomSheet> {
-  late final _cubit = SelectFilesCubit(widget.isWeb);
+  late final _cubit = SelectFilesCubit(context.read(), widget.isWeb);
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +31,7 @@ class _SelectFilesBottomSheetState extends State<SelectFilesBottomSheet> {
       listenWhen: (_, current) => current is SessionCreated,
       listener: (_, state) {
         if (state is SessionCreated) {
-          Navigator.of(context).pop(state.session);
+          Navigator.of(context).pop();
         }
       },
 
@@ -90,7 +86,7 @@ class _SelectFilesBottomSheetState extends State<SelectFilesBottomSheet> {
                               }
                               final file = state.files[index];
                               return ListTile(
-                                title: Text(p.basename(file.path)),
+                                title: Text(path.basename(file.path)),
                                 subtitle: Text(
                                   formattedSize(file.lengthSync()),
                                 ),

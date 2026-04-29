@@ -17,8 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final SessionsCubit _sessionsCubit = context.read();
-
   @override
   void initState() {
     _checkPermission();
@@ -122,21 +120,13 @@ class _HomePageState extends State<HomePage> {
     debugPrint(result.toString());
   }
 
-  void _send() async {
-    final session = await (Platform.isAndroid || Platform.isIOS
-        ? SelectFilesBottomSheet.show(context)
-        : SelectFilesDialog.show(context));
-    if (session == null) return;
-    _sessionsCubit.addSession(session);
-  }
+  void _send() => Platform.isAndroid || Platform.isIOS
+      ? SelectFilesBottomSheet.show(context)
+      : SelectFilesDialog.show(context);
 
-  void _webShare() async {
-    final session = await (Platform.isAndroid || Platform.isIOS
-        ? SelectFilesBottomSheet.show(context, isWeb: true)
-        : SelectFilesDialog.show(context, isWeb: true));
-    if (session == null) return;
-    _sessionsCubit.addSession(session);
-  }
+  void _webShare() => Platform.isAndroid || Platform.isIOS
+      ? SelectFilesBottomSheet.show(context, isWeb: true)
+      : SelectFilesDialog.show(context, isWeb: true);
 
   void _receive() async {
     ReceiveFilesDialog.show(context);

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/features/home/presentation/home_page.dart';
 import 'package:nice_share/features/main/presentation/components/animated_title.dart';
 import 'package:nice_share/features/main/presentation/components/my_nav_bar.dart';
@@ -21,7 +22,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, result) async {
         if (_pageController.page != 0) {
           _pageController.animateToPage(
             0,
@@ -29,6 +30,7 @@ class _MainShellState extends State<MainShell> {
             curve: Curves.easeIn,
           );
         } else {
+          await FlutterForegroundTask.stopService();
           exit(0);
         }
       },

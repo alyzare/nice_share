@@ -1,37 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/models/session_blueprint.dart';
-import 'package:nice_share/core/network/custom_server.dart';
-import 'package:nice_share/core/services/base_session/base_session.dart';
+import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
 
-class SessionsCubit extends Cubit<int> {
-  final CustomServer server;
+class SessionsCubit extends Cubit<List<SessionModel>> {
   final String peerName;
 
-  SessionsCubit({required this.peerName, required this.server}) : super(0);
+  SessionsCubit({required this.peerName}) : super(List.unmodifiable([]));
 
-  final List<BaseSession> sessions = [];
+  ServerBridge get server => ServerBridge.instance;
 
-  void addSession(SessionBlueprint sessionBlueprint) {
-    final session = sessionBlueprint.createSession(server);
-    sessions.add(session);
-    emit(sessions.length);
-    session.isClosedNotifier.addListener(() {
-      final isClosed = session.isClosedNotifier.value;
-      if (!_isClosing && isClosed) {
-        sessions.remove(session);
-        emit(sessions.length);
-      }
-    });
-  }
-
-  bool _isClosing = false;
-
-  @override
-  Future<void> close() {
-    _isClosing = true;
-    for (final session in sessions) {
-      session.close();
-    }
-    return super.close();
+  void addSession(SessionModel sessionBlueprint) async {
+    final session = await server.createSession(sessionBlueprint);
+    if (session != null) emit(List.unmodifiable([...state, session]));
   }
 }

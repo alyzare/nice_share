@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/request_helper.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
 import 'package:path_provider/path_provider.dart' as p;
@@ -12,7 +13,7 @@ class ReceiveSessionCubit extends Cubit<ReceiveSessionState> with BaseSession {
   int get sessionId => requestHelper.sender.sessionId;
 
   @override
-  late final List<File> files;
+  late final List<FileHandler> fileHandlers;
 
   final RequestHelper requestHelper;
 
@@ -26,8 +27,9 @@ class ReceiveSessionCubit extends Cubit<ReceiveSessionState> with BaseSession {
   void _initFiles(List<String> paths) async {
     final basePath = await p.getDownloadsDirectory();
     await basePath!.create(recursive: true);
-    files = paths
-        .map((path) => File('$basePath/${pathlib.basename(path)}'))
-        .toList();
+    //todo
+    // files = paths
+    //     .map((path) => File('$basePath/${pathlib.basename(path)}'))
+    //     .toList();
   }
 }

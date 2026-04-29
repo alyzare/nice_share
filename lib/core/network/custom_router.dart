@@ -5,43 +5,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nice_share/core/models/file_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
-import 'package:nice_share/core/network/handlers/web_handler.dart';
+import 'package:nice_share/core/services/send_session/send_session.dart';
+import 'package:nice_share/core/services/sessions/sessions_manager.dart';
+import 'package:nice_share/core/services/web_session/web_session.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 
-import 'handlers/send_handlers.dart';
-
 class CustomRouter {
   late final router = shelf.Router(notFoundHandler: _notFoundHandler);
+
   CustomRouter() {
     router
-      ..get('/session/<sessionId>', _sessionHandler)
-      ..get('/session/<sessionId>/<fId>', _fileHandler)
-      ..get('/web/session/<sessionId>/<fName>', _webFileHandler)
-      ..get('/web/session/<sessionId>', _webHandler)
-      ..get('/static/<file>', _staticHandler)
-      ..get('/web/list', _webListHandler)
+      ..get('/session/<sessionId>', _sessionHandler)..get(
+        '/session/<sessionId>/<fId>', _fileHandler)..get(
+        '/web/session/<sessionId>/<fName>', _webFileHandler)..get(
+        '/web/session/<sessionId>', _webHandler)..get(
+        '/static/<file>', _staticHandler)..get('/web/list', _webListHandler)
       ..post("/web/upload", _uploadHandler);
   }
 
-  final Map<int, SendHandler> handlers = {};
-  final Map<int, WebHandler> webHandlers = {};
+  final sessionsManager = SessionsManager();
+
+  List<WebSession> get webSessions => sessionsManager.webSessions;
+
+  List<SendSession> get sendSessions => sessionsManager.sendSessions;
 
   Future<Response> _sessionHandler(Request request, String sessionId) async {
     final id = int.tryParse(sessionId);
-    final infoHandler = handlers[id]?.infoHandler;
+    final session = sessionsManager.sendSessions
+        .where((element) => element.sessionId == id)
+        .firstOrNull;
 
-    if (infoHandler == null) {
+    if (session == null) {
       return Response.badRequest(
         body: jsonEncode({'message': 'Invalid session id'}),
       );
     }
     final peerName = request.headers['X-Peer-Name'];
 
-    final info = await infoHandler.getInfo(peerName ?? "No Name");
+    final info = await session.infoHandler.getInfo(peerName ?? "No Name");
 
     if (info == null) {
       return Response.forbidden(jsonEncode({"message": "Permission Denied!"}));
@@ -65,9 +70,9 @@ class CustomRouter {
       );
     }
 
-    final handler = handlers[id];
+    final session = sendSessions.where((element) => element.sessionId ==id,).firstOrNull;
 
-    if (handler == null) {
+    if (session == null) {
       return Response.badRequest(
         body: jsonEncode({'message': 'Invalid session id'}),
       );
@@ -75,7 +80,7 @@ class CustomRouter {
 
     late final FileHandler fileHandler;
     try {
-      fileHandler = handler.getFile(id: fileId, token: token);
+      fileHandler = session.getFile(id: fileId, token: token);
     } catch (e) {
       if (e.toString() == "Wrong token") {
         return Response.unauthorized(
@@ -94,9 +99,11 @@ class CustomRouter {
       return Response.notFound(jsonEncode({"message": "File not found"}));
     }
 
-    final length = fileHandler.fileLength, range = request.headers['range'];
+    final length = fileHandler.fileLength,
+        range = request.headers['range'];
 
-    int start = 0, end = length - 1;
+    int start = 0,
+        end = length - 1;
 
     if (range != null && range.startsWith("bytes=")) {
       final parts = range.substring(6).split('-');
@@ -131,16 +138,18 @@ class CustomRouter {
       );
     }
 
-    final handler = webHandlers[id];
+    final session = webSessions
+        .where((element) => element.sessionId == id)
+        .firstOrNull;
 
-    if (handler == null) {
+    if (session == null) {
       return Response.badRequest(
         body: jsonEncode({'message': 'Invalid session id'}),
       );
     }
     late final FileHandler fileHandler;
     try {
-      fileHandler = handler.getFile(fileName)!;
+      fileHandler = session.getFile(fileName)!;
     } catch (e) {
       if (e.toString() == "Wrong token") {
         return Response.unauthorized(
@@ -159,9 +168,11 @@ class CustomRouter {
       return Response.notFound(jsonEncode({"message": "File not found"}));
     }
 
-    final length = fileHandler.fileLength, range = request.headers['range'];
+    final length = fileHandler.fileLength,
+        range = request.headers['range'];
 
-    int start = 0, end = length - 1;
+    int start = 0,
+        end = length - 1;
 
     if (range != null && range.startsWith("bytes=")) {
       final parts = range.substring(6).split('-');
@@ -196,18 +207,21 @@ class CustomRouter {
       );
     }
 
-    final handler = webHandlers[id];
+    final session = webSessions
+        .where((element) => element.sessionId == id)
+        .firstOrNull;
 
-    if (handler == null) {
+    if (session == null) {
       return Response.badRequest(
         body: jsonEncode({'message': 'Invalid session id'}),
       );
     }
 
     final content = await rootBundle.loadString("assets/static/index.html");
-    final stringBuilder = StringBuffer()..write('<ul>');
+    final stringBuilder = StringBuffer()
+      ..write('<ul>');
 
-    for (final fileHandler in handler.files.values) {
+    for (final fileHandler in session.fileHandlers) {
       final fileName = fileHandler.fileName;
       final fileSize = formattedSize(fileHandler.fileLength);
 
@@ -221,14 +235,14 @@ class CustomRouter {
     final finalContent = content
         .replaceFirst("<dart_title />", "<h2>Nice Share</h2>")
         .replaceAll(
-          "<dart_form />",
-          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
-        )
+      "<dart_form />",
+      '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
+    )
         .replaceFirst("<dart />", listHtml)
         .replaceFirst(
-          "<dart_script />",
-          '<script src="/static/upload.js" defer></script>',
-        );
+      "<dart_script />",
+      '<script src="/static/upload.js" defer></script>',
+    );
 
     return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
   }
@@ -236,9 +250,10 @@ class CustomRouter {
   Future<Response> _webListHandler(Request request) async {
     final content = await rootBundle.loadString("assets/static/index.html");
 
-    final stringBuilder = StringBuffer()..write('<ul>');
+    final stringBuilder = StringBuffer()
+      ..write('<ul>');
 
-    for (final key in webHandlers.keys) {
+    for (final key in webSessions.map((e) => e.sessionId)) {
       stringBuilder.write(
         '<li><a href="/web/session/$key"><span class="name">Session: $key</span></a></li>',
       );
@@ -248,12 +263,14 @@ class CustomRouter {
     final finalContent = content
         .replaceFirst("<dart_title />", "<h2>Sessions</h2>")
         .replaceFirst("<dart />", listHtml)
-        .replaceFirst("<dart_script />", 
-          '<script src="/static/upload.js" defer></script>')
+        .replaceFirst(
+      "<dart_script />",
+      '<script src="/static/upload.js" defer></script>',
+    )
         .replaceAll(
-          "<dart_form />",
-          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
-        );
+      "<dart_form />",
+      '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
+    );
 
     return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
   }
@@ -279,7 +296,11 @@ class CustomRouter {
       path.join(
         downloadsDir.path,
         'Nice Share',
-        MyFileType.fromExtension(fileName.split(".").last).dirName,
+        MyFileType
+            .fromExtension(fileName
+            .split(".")
+            .last)
+            .dirName,
       ),
     );
     if (!await saveDir.exists()) {
@@ -337,8 +358,8 @@ class CustomRouter {
   Future<Response> _notFoundHandler(Request request) async {
     if (request.method == "GET" &&
         (request.url.path.isEmpty || request.url.path == "web")) {
-      return webHandlers.length == 1
-          ? Response.found("web/session/${webHandlers.keys.first}")
+      return webSessions.length == 1
+          ? Response.found("web/session/${webSessions.first.sessionId}")
           : Response.found("web/list");
     }
     try {
@@ -358,7 +379,8 @@ class CustomRouter {
     }
   }
 
-  Future<Directory?> _getDownloadDirectory() async => Platform.isAndroid
-      ? Directory("/storage/emulated/0")
-      : await path_provider.getDownloadsDirectory();
+  Future<Directory?> _getDownloadDirectory() async =>
+      Platform.isAndroid
+          ? Directory("/storage/emulated/0")
+          : await path_provider.getDownloadsDirectory();
 }
