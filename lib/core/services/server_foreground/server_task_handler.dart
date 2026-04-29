@@ -40,7 +40,7 @@ class ServerTaskHandler extends TaskHandler {
 
   @override
   Future<void> onReceiveData(Object data) async {
-    print("DATA RECEIVED FROM MAIN $data");
+    debugPrint("DATA RECEIVED FROM MAIN $data");
     if (data is! Map<String, dynamic> ||
         data["type"] == null ||
         data["type"] is! String) {
@@ -59,6 +59,11 @@ class ServerTaskHandler extends TaskHandler {
           SessionsEvent.byAction(data["action"] as String, data["payload"]),
         );
         result["data"] = {"id": id};
+      case "get_all":
+        final sessions = (await _server.future).sessionsManager.sessions;
+        result["data"] = sessions
+            .map((session) => session.toMap())
+            .toList(growable: false);
     }
 
     FlutterForegroundTask.sendDataToMain(result);

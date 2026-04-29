@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/info_handler.dart';
 import 'package:nice_share/core/services/base_session/base_session.dart';
@@ -90,4 +91,7 @@ class SendSession with BaseSession {
     // TODO
     throw UnimplementedError();
   }
+
+  @override
+  SessionType get type => .send;
 }

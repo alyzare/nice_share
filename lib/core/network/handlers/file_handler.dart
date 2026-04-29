@@ -26,6 +26,8 @@ class FileHandler {
 
   String get fileName => _file.uri.pathSegments.last;
 
+  String get path => _file.path;
+
   static List<FileHandler> list(List<File> files) =>
       files.map((e) => FileHandler(file: e)).toList();
 

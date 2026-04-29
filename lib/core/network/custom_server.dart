@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/services/sessions/sessions_manager.dart';
 import 'package:nice_share/core/services/web_session/web_session.dart';
@@ -10,7 +8,6 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 
 import 'custom_router.dart';
-import 'handlers/send_handlers.dart';
 
 class CustomServer {
   int get port => _server.port;

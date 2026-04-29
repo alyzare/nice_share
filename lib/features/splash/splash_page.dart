@@ -14,8 +14,6 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  String counter = "-1";
-
   @override
   void initState() {
     super.initState();
@@ -33,17 +31,29 @@ class _SplashPageState extends State<SplashPage> {
           exit(0);
         }
       },
-      child: Scaffold(body: Center(child: Text(counter))),
+      child: Scaffold(
+        body: Center(
+          child: Text(
+            "Nice Share",
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
     );
   }
 
   Future<void> _init() async {
     await ServerTaskHandler.startServerService();
-    await ServerBridge.instance.ensureServerRunning();
-    if (mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => MainShell()));
+    try {
+      await ServerBridge.instance.ensureServerRunning();
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (context) => MainShell()));
+      }
+    } catch (_) {
+      await FlutterForegroundTask.stopService();
+      exit(0);
     }
   }
 }

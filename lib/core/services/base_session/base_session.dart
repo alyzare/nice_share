@@ -1,10 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
+import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
 mixin BaseSession {
+  SessionType get type;
+
   int get sessionId;
 
   List<FileHandler> get fileHandlers;
@@ -31,4 +32,10 @@ mixin BaseSession {
       // }
     }
   }
+
+  Map<String, Object?> toMap() => {
+    "sessionId": sessionId,
+    "files": fileHandlers.map((e) => e.fileName).toList(),
+    "type": type.index,
+  };
 }

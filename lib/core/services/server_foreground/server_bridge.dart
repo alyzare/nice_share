@@ -19,11 +19,12 @@ class ServerBridge {
   }
 
   Future<SessionModel?> createSession(SessionModel sessionBlueprint) async {
-    final int id = await _request(
+    final result = await _request(
       "session",
       action: "add",
       payload: sessionBlueprint.toMap(),
     );
+    final id = result["id"] as int? ?? -1;
     if (id > 0) {
       return SessionModel.fromBlueprint(
         blueprint: sessionBlueprint,
@@ -31,6 +32,14 @@ class ServerBridge {
       );
     }
     return null;
+  }
+
+  Future<List<SessionModel>> getSessions() async {
+    final List<Map<String, Object?>> sessionsData =
+        await _request("get_all") ?? [];
+    return sessionsData
+        .map((data) => SessionModel.fromMap(data))
+        .toList(growable: false);
   }
 
   late final int _port;
@@ -63,14 +72,15 @@ class ServerBridge {
     final completer = Completer<T?>();
     _completers[id] = completer;
 
-    FlutterForegroundTask.sendDataToTask({
+    final response = {
       "type": type,
       "id": id,
-      "data": payload,
-    });
-    debugPrint(
-      "DATA SENT TO FOREGROUND: ${{"type": type, "id": id, "data": payload}}",
-    );
+      "action": ?action,
+      "payload": payload,
+    };
+
+    FlutterForegroundTask.sendDataToTask(response);
+    debugPrint("DATA SENT TO FOREGROUND: $response");
     return completer.future;
   }
 

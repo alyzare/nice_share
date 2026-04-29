@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/session_model.dart';
-import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
+import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 import 'package:path_provider/path_provider.dart';
 

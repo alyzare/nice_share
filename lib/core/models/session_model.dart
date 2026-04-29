@@ -10,7 +10,9 @@ class SessionModel {
   SessionModel.fromMap(Map<String, Object?> payload)
     : sessionId = payload["id"] as int? ?? -1,
       files =
-          (payload["files"] as List<String>?)?.map((e) => File(e)).toList() ??
+          (payload["files"] as List?)
+              ?.map((e) => File(e))
+              .toList() ??
           [],
       type = SessionType.values[payload["type"] as int];
 

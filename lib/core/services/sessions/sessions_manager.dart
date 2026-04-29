@@ -11,7 +11,10 @@ class SessionsManager {
   List<WebSession> get webSessions =>
       _sessions.whereType<WebSession>().toList();
 
-  List<SendSession> get sendSessions => _sessions.whereType<SendSession>().toList();
+  List<SendSession> get sendSessions =>
+      _sessions.whereType<SendSession>().toList();
+
+  List<BaseSession> get sessions => List.unmodifiable(_sessions);
 
   int addEvent(SessionsEvent event) {
     switch (event) {

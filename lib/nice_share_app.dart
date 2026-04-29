@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nice_share/core/services/server_foreground/server_task_handler.dart';
-import 'package:nice_share/features/main/presentation/main_shell.dart';
 import 'package:nice_share/features/splash/splash_page.dart';
 
 class NiceShareApp extends StatefulWidget {

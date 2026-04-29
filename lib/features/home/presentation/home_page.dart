@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/services/sessions/sessions_cubit.dart';
 import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_bottom_sheet.dart';
 import 'package:nice_share/features/home/presentation/components/select_files_dialog.dart';
+import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
 
