@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/models/session_model.dart';
-import 'package:nice_share/core/network/handlers/send_handlers.dart';
 
 class ServerBridge {
   static final ServerBridge _instance = ServerBridge._();
@@ -54,18 +53,6 @@ class ServerBridge {
   Future<void> ensureServerRunning() async {
     _port = await _request("ensure_server_running");
     debugPrint(_port.toString());
-  }
-
-  void addSendHandler(int sessionId, SendHandler sendHandler) {
-    //TODO: remove
-  }
-
-  void removeSendHandler(int sessionId) {
-    //TODO: remove
-  }
-
-  void removeWebHandler(int sessionId) {
-    //TODO: remove
   }
 
   Future<T?> _request<T>(

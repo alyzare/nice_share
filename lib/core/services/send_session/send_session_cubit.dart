@@ -5,8 +5,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/network/handlers/file_handler.dart';
-import 'package:nice_share/core/network/handlers/info_handler.dart';
 import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
 
 part 'send_session_state.dart';
@@ -23,17 +21,6 @@ class SendSessionCubit extends Cubit<SendSessionState> {
     required this.server,
   }) : super(SendSessionBroadcasting()) {
     _udpTimer = Timer.periodic(Duration(milliseconds: 500), _broadcastAddress);
-    server.addSendHandler(
-      sessionId,
-      .new(
-        fileHandlers: FileHandler.list(files),
-        infoHandler: InfoHandler(
-          info: getInfo(),
-          askPermission: _askPermission,
-        ),
-        tokenNotifier: _tokenNotifier,
-      ),
-    );
   }
 
   Map<String, Object> getInfo() => {
@@ -108,7 +95,6 @@ class SendSessionCubit extends Cubit<SendSessionState> {
   @override
   Future<void> close() {
     _udpTimer.cancel();
-    server.removeSendHandler(sessionId);
     _tokenNotifier.dispose();
 
     return super.close();

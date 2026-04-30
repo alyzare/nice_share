@@ -17,13 +17,15 @@ class CustomServer {
 
   final StreamController<String> _logController;
 
-  SessionsManager get sessionsManager => _router.sessionsManager;
+  final SessionsManager sessionsManager;
 
   Stream<String> get requestLogs => _logController.stream;
 
-  static Future<CustomServer> start() async {
+  static Future<CustomServer> start({
+    required SessionsManager sessionManager,
+  }) async {
     try {
-      final router = CustomRouter();
+      final router = CustomRouter(sessionsManager: sessionManager);
       final logController = StreamController<String>.broadcast();
       final handler = Pipeline()
           .addMiddleware(
@@ -41,7 +43,7 @@ class CustomServer {
           )
           .addHandler(router.router.call);
       final server = await serve(handler, InternetAddress.anyIPv4, 8088);
-      return CustomServer._(server, router, logController);
+      return CustomServer._(server, router, logController, sessionManager);
     } catch (e) {
       log(e.toString());
       rethrow;
@@ -53,7 +55,12 @@ class CustomServer {
     await _logController.close();
   }
 
-  CustomServer._(this._server, this._router, this._logController);
+  CustomServer._(
+    this._server,
+    this._router,
+    this._logController,
+    this.sessionsManager,
+  );
 
   void addWebSession(WebSession session) => _router.webSessions.add(session);
 

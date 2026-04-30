@@ -5,9 +5,11 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
+import 'package:nice_share/core/services/sessions/sessions_manager.dart';
 
 class ServerTaskHandler extends TaskHandler {
   final Completer<CustomServer> _server = Completer();
+  final sessionsManager = SessionsManager();
 
   @override
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
@@ -21,7 +23,7 @@ class ServerTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     debugPrint("Foreground starting...");
-    _server.complete(CustomServer.start());
+    _server.complete(CustomServer.start(sessionManager: sessionsManager));
     final port = (await _server.future).port;
     FlutterForegroundTask.updateService(
       notificationTitle: "Nice Share Running",
