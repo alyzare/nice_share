@@ -7,7 +7,8 @@ import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/info_handler.dart';
-import 'package:nice_share/core/services/base_session/base_session.dart';
+
+import 'base_session.dart';
 
 class SendSession with BaseSession {
   @override
@@ -28,8 +29,9 @@ class SendSession with BaseSession {
 
   InfoHandler get infoHandler => InfoHandler(
     info: {
-      "sessionId": sessionId,
-      "files": fileHandlers.map((e) => e.fileName).toList(),
+      "files": fileHandlers
+          .map((e) => {"name": e.fileName, "length": e.fileLength})
+          .toList(),
     },
     askPermission: _askPermission,
   );
@@ -85,9 +87,16 @@ class SendSession with BaseSession {
     ).map((e) => e.toRadixString(16).padLeft(2, '0')).join();
   }
 
-  FileHandler getFile({required int id, required String token}) {
-    // TODO
-    throw UnimplementedError();
+  Future<FileHandler> getFile({
+    required int id,
+    required String token,
+    required PeerModel peer,
+  }) async {
+    final serverToken = await _permissionTokenCompleters[peer]?.future;
+    if (serverToken != token) {
+      throw "Wrong token";
+    }
+    return fileHandlers[id];
   }
 
   void setPermissionResult({required PeerModel peer, required bool isGranted}) {

@@ -7,11 +7,9 @@ import 'package:nice_share/core/models/session_model.dart';
 import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
 
 class SessionsCubit extends Cubit<List<SessionModel>> {
-  final String peerName;
-
   ServerBridge get server => ServerBridge.instance;
 
-  SessionsCubit({required this.peerName}) : super(List.unmodifiable([])) {
+  SessionsCubit() : super(List.unmodifiable([])) {
     updateSessions();
   }
 
@@ -52,11 +50,13 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
     emit(List.unmodifiable(sessions));
   }
 
-  void addSession(SessionModel sessionBlueprint) async {
+  Future<bool> addSession(SessionModel sessionBlueprint) async {
     final session = await server.createSession(sessionBlueprint);
     if (session != null) {
       emit(List.unmodifiable([...state, session]));
+      return true;
     }
+    return false;
   }
 
   void closeSession(int sessionId) async {
@@ -90,6 +90,10 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
         .where((element) => element.sessionId == request.sessionId)
         .firstOrNull;
     session?.setPermission(peer: request.peer, answer: answer);
+  }
+
+  void refresh(List<SessionModel> list) {
+    emit(List.unmodifiable(list));
   }
 }
 

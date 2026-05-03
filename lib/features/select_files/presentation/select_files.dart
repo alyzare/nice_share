@@ -9,9 +9,8 @@ import '../logic/select_files_cubit.dart';
 
 class SelectFiles extends StatefulWidget {
   final bool isWeb;
-  final SelectFilesVariant variant;
 
-  const SelectFiles._({required this.variant, this.isWeb = false});
+  const SelectFiles._({this.isWeb = false});
 
   static Future<void> show(BuildContext context, {bool isWeb = false}) {
     return Platform.isAndroid
@@ -19,11 +18,11 @@ class SelectFiles extends StatefulWidget {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => SelectFiles._(variant: .bottomSheet, isWeb: isWeb),
+            builder: (_) => SelectFiles._(isWeb: isWeb),
           )
         : showDialog(
             context: context,
-            builder: (_) => SelectFiles._(variant: .dialog, isWeb: isWeb),
+            builder: (_) => SelectFiles._(isWeb: isWeb),
           );
   }
 
@@ -80,24 +79,20 @@ class _SelectFilesState extends State<SelectFiles> {
 
         return Column(
           children: [
-            _Header(widget.variant),
+            _Header(),
             Expanded(child: list),
             LinearProgressIndicator(
               backgroundColor: Colors.transparent,
               value: state.isLoadingFiles ? null : 1,
               minHeight: 1,
             ),
-            _Actions(
-              isLoading: state.isLoadingFiles,
-              cubit: _cubit,
-              variant: widget.variant,
-            ),
+            _Actions(isLoading: state.isLoadingFiles, cubit: _cubit),
           ],
         );
       },
     );
 
-    if (widget.variant == SelectFilesVariant.dialog) {
+    if (!Platform.isAndroid) {
       return Dialog(
         constraints: const BoxConstraints(maxHeight: 400, maxWidth: 400),
         clipBehavior: Clip.antiAlias,
@@ -125,45 +120,40 @@ class _SelectFilesState extends State<SelectFiles> {
 }
 
 class _Header extends StatelessWidget {
-  final SelectFilesVariant variant;
-
-  const _Header(this.variant);
-
   @override
   Widget build(BuildContext context) {
-    return switch (variant) {
-      .dialog => SizedBox(
-        height: 40,
-        child: Center(
-          child: Text(
-            "Select files to send",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-      .bottomSheet => Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(999),
+    return Platform.isAndroid
+        ? Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Select files to send',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          )
+        : SizedBox(
+            height: 40,
+            child: Center(
+              child: Text(
+                "Select files to send",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Select files to send',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    };
+          );
   }
 }
 
@@ -171,13 +161,7 @@ class _Actions extends StatelessWidget {
   final bool isLoading;
   final SelectFilesCubit cubit;
 
-  final SelectFilesVariant variant;
-
-  const _Actions({
-    required this.isLoading,
-    required this.cubit,
-    required this.variant,
-  });
+  const _Actions({required this.isLoading, required this.cubit});
 
   @override
   Widget build(BuildContext context) {
@@ -200,12 +184,12 @@ class _Actions extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: variant == SelectFilesVariant.dialog
+        padding: !Platform.isAndroid
             ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
             : const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          border: variant == SelectFilesVariant.dialog
+          border: !Platform.isAndroid
               ? Border(top: BorderSide(color: Theme.of(context).dividerColor))
               : null,
         ),
@@ -214,5 +198,3 @@ class _Actions extends StatelessWidget {
     );
   }
 }
-
-enum SelectFilesVariant { dialog, bottomSheet }

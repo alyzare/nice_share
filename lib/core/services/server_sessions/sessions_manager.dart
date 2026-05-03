@@ -1,22 +1,26 @@
 import 'dart:async';
 
 import 'package:nice_share/core/models/peer_model.dart';
+import 'package:nice_share/core/models/receive_session_model.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
-import 'package:nice_share/core/services/base_session/base_session.dart';
-import 'package:nice_share/core/services/send_session/send_session.dart';
 import 'package:nice_share/core/services/server_foreground/global_id_service.dart';
-import 'package:nice_share/core/services/server_foreground/server_task_handler.dart';
-import 'package:nice_share/core/services/web_session/web_session.dart';
+import 'package:nice_share/core/services/server_sessions/receive_session.dart';
+
+import '../server_foreground/base_handler.dart';
+import 'base_session.dart';
+import 'send_session.dart';
+import 'web_session.dart';
 
 class SessionsManager {
-  final ServerTaskHandler taskHandler;
+  final BaseHandler handler;
+
   final List<BaseSession> _sessions = [];
 
   final Map<int, StreamSubscription<PeerModel>> _permissionSubs = {};
 
-  SessionsManager({required this.taskHandler});
+  SessionsManager({required this.handler});
 
   List<WebSession> get webSessions =>
       _sessions.whereType<WebSession>().toList();
@@ -46,12 +50,12 @@ class SessionsManager {
           fileHandlers: event.session.files
               .map((e) => FileHandler(file: e))
               .toList(),
-          serverPort: await taskHandler.serverPort,
+          serverPort: await handler.serverPort,
         );
         _permissionSubs[session.sessionId] = session.permissionEvents.listen((
           peer,
         ) async {
-          final answer = await taskHandler.askPermission(
+          final answer = await handler.askPermission(
             sessionId: session.sessionId,
             peer: peer,
           );
@@ -60,8 +64,23 @@ class SessionsManager {
         _sessions.add(session);
         return session.sessionId;
       case SessionType.receive:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        try {
+          final session = await ReceiveSession.getFromSender(
+            (event.session as ReceiveSessionModel).sender,
+          );
+          session.addOnCloseCallback(() async {
+            _sessions.remove(session);
+            await handler.refresh();
+            print("HELO");
+          });
+          _sessions.add(session);
+          return session.sessionId;
+        } catch (e) {
+          if (e == "Permission Denied") {
+            return -1;
+          }
+          rethrow;
+        }
       case SessionType.webShare:
         final session = WebSession(
           fileHandlers: event.session.files

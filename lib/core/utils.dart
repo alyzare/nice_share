@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<String> getDeviceName() async {
   final plugin = DeviceInfoPlugin();
@@ -21,3 +24,7 @@ String formattedSize(int size) {
   }
   return "${size.toStringAsFixed(2)} TB";
 }
+
+Future<Directory?> getDownloadDirectory() async => Platform.isAndroid
+    ? Directory("/storage/emulated/0")
+    : await getDownloadsDirectory();

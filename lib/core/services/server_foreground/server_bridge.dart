@@ -1,31 +1,27 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/services/server_foreground/windows_handler.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 class ServerBridge {
-  static final ServerBridge _instance = ServerBridge._();
-
-  static ServerBridge get instance => _instance;
-
-  ServerBridge._();
-
-  SessionsCubit? _sessionsCubit;
-
   set sessionsCubit(SessionsCubit value) => _sessionsCubit = value;
 
   void handleMessage(Object data) {
-    if (data is! Map<String, dynamic> || data["id"] is! int) return;
+    if (data is! Map<String, Object?>) return;
 
     final type = data["type"];
 
     return type is String && data.isNotEmpty
         ? _handleRequest(data)
-        : _completers[data["id"]]?.complete(data["data"]);
+        : (data["id"] is int)
+        ? _completers[data["id"]]?.complete(data["data"])
+        : null;
   }
 
   void _handleRequest(Map<String, dynamic> data) async {
@@ -40,18 +36,26 @@ class ServerBridge {
           peer: PeerModel.fromMap(data["payload"]["peer"]),
         );
         result["payload"] = answer;
+      case "refresh":
+        final List<Map<String, Object?>> sessionsData = data["payload"];
+        return _sessionsCubit?.refresh(
+          sessionsData
+              .map((data) => SessionModel.fromMap(data))
+              .toList(growable: false),
+        );
     }
 
-    FlutterForegroundTask.sendDataToTask(result);
+    sendDataToServer(result);
     debugPrint("DATA SENT TO FOREGROUND: $result");
   }
 
+  void sendDataToServer(Object data) => Platform.isAndroid
+      ? FlutterForegroundTask.sendDataToTask(data)
+      : WindowsHandler.instance.onReceiveData(data);
+
   Future<SessionModel?> createSession(SessionModel sessionBlueprint) async {
-    final result = await _request(
-      "session",
-      action: "add",
-      payload: sessionBlueprint.toMap(),
-    );
+    final map = sessionBlueprint.toMap();
+    final result = await _request("session", action: "add", payload: map);
     final id = result["id"] as int? ?? -1;
     if (id > 0) {
       final peersMap = result["peers"] as Map<Uint8List, String?>?;
@@ -64,6 +68,11 @@ class ServerBridge {
     await _request("session", action: "remove", payload: {"id": sessionId});
   }
 
+  Future<void> ensureServerRunning() async {
+    _port = await _request("ensure_server_running");
+    debugPrint(_port.toString());
+  }
+
   Future<List<SessionModel>> getSessions() async {
     final List<Map<String, Object?>> sessionsData =
         await _request("get_all") ?? [];
@@ -74,12 +83,11 @@ class ServerBridge {
 
   late final int _port;
 
-  int get port => _port;
+  final Map<int, Completer> _completers = {};
 
-  Future<void> ensureServerRunning() async {
-    _port = await _request("ensure_server_running");
-    debugPrint(_port.toString());
-  }
+  SessionsCubit? _sessionsCubit;
+
+  int get port => _port;
 
   Future<T?> _request<T>(
     String type, {
@@ -97,10 +105,13 @@ class ServerBridge {
       "payload": payload,
     };
 
-    FlutterForegroundTask.sendDataToTask(response);
-    debugPrint("DATA SENT TO FOREGROUND: $response");
+    sendDataToServer(response);
     return completer.future;
   }
 
-  final Map<int, Completer> _completers = {};
+  static ServerBridge get instance => _instance;
+
+  static final ServerBridge _instance = ServerBridge._();
+
+  ServerBridge._();
 }

@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:nice_share/core/models/peer_model.dart';
+import 'package:nice_share/core/models/receive_session_model.dart';
 import 'package:nice_share/core/models/send_session_model.dart';
 import 'package:nice_share/core/models/web_session_model.dart';
 
+import 'sender.dart';
 import 'session_type.dart';
 
 abstract class SessionModel {
@@ -33,8 +35,11 @@ abstract class SessionModel {
             ?.map((e) => PeerModel.fromMap(e))
             .toList(),
       ),
-      // TODO: Handle this case.
-      SessionType.receive => throw UnimplementedError(),
+      SessionType.receive => ReceiveSessionModel(
+        sender: Sender.fromMap(payload["sender"] as Map<String, Object>),
+        files: files,
+        sessionId: sessionId,
+      ),
       .webShare => WebSessionModel(sessionId: sessionId, files: files),
     };
   }
@@ -42,12 +47,13 @@ abstract class SessionModel {
   static SessionModel blueprint({
     List<File> files = const [],
     required SessionType type,
+    Sender? sender,
   }) {
+    assert(type != .receive || sender != null);
     return switch (type) {
-      .send => SendSessionModel(files: files, sessionId: -1),
-      // TODO: Handle this case.
-      .receive => throw UnimplementedError(),
-      .webShare => WebSessionModel(sessionId: -1, files: files),
+      .send => SendSessionModel(files: files),
+      .receive => ReceiveSessionModel(sender: sender!),
+      .webShare => WebSessionModel(files: files),
     };
   }
 
@@ -58,8 +64,15 @@ abstract class SessionModel {
           files: files,
           createPermissionCubit: true,
         ),
-        SessionType.webShare => WebSessionModel(sessionId: sessionId, files: files),
-        SessionType.receive => throw UnimplementedError(),
+        SessionType.webShare => WebSessionModel(
+          sessionId: sessionId,
+          files: files,
+        ),
+        SessionType.receive => ReceiveSessionModel(
+          sessionId: sessionId,
+          sender: (this as ReceiveSessionModel).sender,
+          files: files,
+        ),
       };
 
   @override

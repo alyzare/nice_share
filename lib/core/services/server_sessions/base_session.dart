@@ -10,17 +10,21 @@ mixin BaseSession {
 
   List<FileHandler> get fileHandlers;
 
-  final isClosedNotifier = ValueNotifier(false);
-
   @mustCallSuper
   Future<void> close() async {
-    isClosedNotifier.value = true;
-    isClosedNotifier.dispose();
+    for (final function in _onCloseCallbacks) {
+      function();
+    }
     for (final handler in fileHandlers) {
       handler.close();
     }
     _deleteCachedFiles();
   }
+
+  void addOnCloseCallback(VoidCallback callback) =>
+      _onCloseCallbacks.add(callback);
+
+  final List<VoidCallback> _onCloseCallbacks = [];
 
   void _deleteCachedFiles() async {
     final cacheDir = await getApplicationCacheDirectory();

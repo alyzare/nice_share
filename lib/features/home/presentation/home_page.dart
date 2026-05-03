@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/features/home/presentation/components/receive_files_dialog.dart';
+import 'package:nice_share/features/home/presentation/components/receive_files.dart';
 import 'package:nice_share/features/select_files/presentation/select_files.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 import 'package:permission_handler/permission_handler.dart'
-as permission_handler;
+    as permission_handler;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -50,37 +50,26 @@ class _HomePageState extends State<HomePage> {
               spacing: 10,
               children: _buttonMap
                   .map(
-                    (e) =>
-                    IconButton.filledTonal(
+                    (e) => IconButton.filledTonal(
                       onPressed: e.onTap,
                       icon: SizedBox(
-                        width: MediaQuery
-                            .of(context)
-                            .size
-                            .width / 3 - 40,
+                        width: MediaQuery.of(context).size.width / 3 - 40,
                         child: Column(
                           spacing: 5,
                           children: [
                             Container(
                               padding: EdgeInsets.all(15),
                               decoration: BoxDecoration(
-                                color: Theme
-                                    .of(
+                                color: Theme.of(
                                   context,
-                                )
-                                    .colorScheme
-                                    .primary
-                                    .withAlpha(128),
+                                ).colorScheme.primary.withAlpha(128),
                                 shape: .circle,
                               ),
                               child: Icon(
                                 e.icon,
-                                color: Theme
-                                    .of(
+                                color: Theme.of(
                                   context,
-                                )
-                                    .colorScheme
-                                    .surfaceBright,
+                                ).colorScheme.surfaceBright,
                               ),
                             ),
                             Text(e.title),
@@ -91,7 +80,7 @@ class _HomePageState extends State<HomePage> {
                         backgroundColor: Colors.transparent,
                       ),
                     ),
-              )
+                  )
                   .toList(),
             ),
             Center(
@@ -121,7 +110,7 @@ class _HomePageState extends State<HomePage> {
     if (!Platform.isAndroid) return;
 
     final permissionStatus =
-    await permission_handler.Permission.manageExternalStorage.status;
+        await permission_handler.Permission.manageExternalStorage.status;
 
     if (permissionStatus == permission_handler.PermissionStatus.granted) return;
 
@@ -134,9 +123,7 @@ class _HomePageState extends State<HomePage> {
 
   void _webShare() => SelectFiles.show(context, isWeb: true);
 
-  void _receive() async {
-    ReceiveFilesDialog.show(context);
-  }
+  void _receive() async => ReceiveFiles.show(context);
 }
 
 class _ButtonModel {

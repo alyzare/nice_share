@@ -8,7 +8,7 @@ class SendSessionModel extends SessionModel {
   final PermissionCubit? _permissionCubit;
 
   SendSessionModel({
-    required super.sessionId,
+    super.sessionId = -1,
     required super.files,
     bool createPermissionCubit = false,
     List<PeerModel>? peers,

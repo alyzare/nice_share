@@ -4,21 +4,25 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/sender.dart';
+import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
-class FindSendersCubit extends Cubit<List<Sender>> {
-  FindSendersCubit() : super(List.empty()) {
+class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
+  final SessionsCubit sessionsCubit;
+
+  FindSendersCubit({required this.sessionsCubit}) : super({}) {
     _initUdpSocket();
   }
 
-  RawDatagramSocket? _udpSocket;
+  late RawDatagramSocket _udpSocket;
   StreamSubscription<RawSocketEvent>? _subscription;
 
   Future<void> _initUdpSocket() async {
     _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 12459);
-    _subscription = _udpSocket!.listen((event) {
+    _subscription = _udpSocket.listen((event) {
       if (event != RawSocketEvent.read) return;
 
-      final datagram = _udpSocket!.receive();
+      final datagram = _udpSocket.receive();
       if (datagram == null) return;
 
       if (String.fromCharCodes(datagram.data.sublist(0, 3)) != "NSS") return;
@@ -30,16 +34,28 @@ class FindSendersCubit extends Cubit<List<Sender>> {
       final port = ByteData.sublistView(
         datagram.data.sublist(11, 15),
       ).getUint32(0);
-
-      if (state.any((element) => element.sessionId == sessionId)) return;
-
-      emit(
-        List.unmodifiable([
-          ...state,
-          Sender(address: datagram.address, port: port, sessionId: sessionId),
-        ]),
+      final sender = Sender(
+        address: datagram.address,
+        port: port,
+        sessionId: sessionId,
       );
+      if (state.containsKey(sender)) return;
+
+      emit(Map.unmodifiable({...state, sender: SenderStatus.idle}));
     });
+  }
+
+  Future<void> sessionSelected(Sender sender) async {
+    emit(Map.unmodifiable({...state}..[sender] = SenderStatus.asking));
+    final result = await sessionsCubit.addSession(
+      SessionModel.blueprint(type: .receive, sender: sender),
+    );
+    emit(
+      Map.unmodifiable(
+        {...state}
+          ..[sender] = result ? SenderStatus.granted : SenderStatus.refused,
+      ),
+    );
   }
 
   @override
@@ -47,4 +63,15 @@ class FindSendersCubit extends Cubit<List<Sender>> {
     _subscription?.cancel();
     return super.close();
   }
+}
+
+enum SenderStatus {
+  idle(true),
+  asking(false),
+  granted(false),
+  refused(true);
+
+  final bool canRequest;
+
+  const SenderStatus(this.canRequest);
 }

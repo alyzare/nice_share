@@ -6,14 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:nice_share/core/models/file_type.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
-import 'package:nice_share/core/services/send_session/send_session.dart';
-import 'package:nice_share/core/services/sessions/sessions_manager.dart';
-import 'package:nice_share/core/services/web_session/web_session.dart';
+import 'package:nice_share/core/services/server_sessions/send_session.dart';
+import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
+import 'package:nice_share/core/services/server_sessions/web_session.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart' as path_provider;
 
 class CustomRouter {
   late final router = shelf.Router(notFoundHandler: _notFoundHandler);
@@ -64,7 +63,11 @@ class CustomRouter {
     return Response.ok(json, headers: {"content-type": "application/json"});
   }
 
-  Response _fileHandler(Request request, String sessionId, String fId) {
+  Future<Response> _fileHandler(
+    Request request,
+    String sessionId,
+    String fId,
+  ) async {
     final id = int.tryParse(sessionId);
     final fileId = int.tryParse(fId);
     final token = request.headers['X-Token'];
@@ -91,7 +94,15 @@ class CustomRouter {
 
     late final FileHandler fileHandler;
     try {
-      fileHandler = session.getFile(id: fileId, token: token);
+      final peerName = request.headers['X-Peer-Name'];
+      final ip =
+          (request.context['shelf.io.connection_info'] as HttpConnectionInfo)
+              .remoteAddress;
+      fileHandler = await session.getFile(
+        id: fileId,
+        token: token,
+        peer: PeerModel(ip: ip, name: peerName),
+      );
     } catch (e) {
       if (e.toString() == "Wrong token") {
         return Response.unauthorized(
@@ -123,7 +134,7 @@ class CustomRouter {
       if (end >= length) end = length - 1;
     }
 
-    final stream = fileHandler(start, end + 1);
+    final stream = fileHandler.send(start, end + 1);
 
     return Response(
       range != null ? 206 : 200,
@@ -190,7 +201,7 @@ class CustomRouter {
       if (end >= length) end = length - 1;
     }
 
-    final stream = fileHandler(start, end + 1);
+    final stream = fileHandler.send(start, end + 1);
 
     return Response(
       range != null ? 206 : 200,
@@ -290,7 +301,7 @@ class CustomRouter {
 
     final fileName = Uri.decodeComponent(fileNameEncoded);
 
-    final downloadsDir = await _getDownloadDirectory();
+    final downloadsDir = await getDownloadDirectory();
     if (downloadsDir == null) {
       return Response.internalServerError(
         body: jsonEncode({'message': 'Cannot find downloads directory'}),
@@ -379,8 +390,4 @@ class CustomRouter {
       return Response.notFound('Not found');
     }
   }
-
-  Future<Directory?> _getDownloadDirectory() async => Platform.isAndroid
-      ? Directory("/storage/emulated/0")
-      : await path_provider.getDownloadsDirectory();
 }
