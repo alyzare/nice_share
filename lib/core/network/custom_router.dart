@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nice_share/core/models/file_type.dart';
+import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/services/send_session/send_session.dart';
 import 'package:nice_share/core/services/sessions/sessions_manager.dart';
@@ -47,14 +48,20 @@ class CustomRouter {
       );
     }
     final peerName = request.headers['X-Peer-Name'];
+    final ip =
+        (request.context['shelf.io.connection_info'] as HttpConnectionInfo)
+            .remoteAddress;
 
-    final info = await session.infoHandler.getInfo(peerName ?? "No Name");
+    final info = await session.infoHandler.getInfo(
+      PeerModel(ip: ip, name: peerName),
+    );
 
     if (info == null) {
       return Response.forbidden(jsonEncode({"message": "Permission Denied!"}));
     }
+    final json = jsonEncode(info);
 
-    return Response.ok(jsonEncode(info));
+    return Response.ok(json, headers: {"content-type": "application/json"});
   }
 
   Response _fileHandler(Request request, String sessionId, String fId) {
