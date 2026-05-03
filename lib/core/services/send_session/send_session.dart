@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/info_handler.dart';
@@ -28,7 +29,7 @@ class SendSession with BaseSession {
   InfoHandler get infoHandler => InfoHandler(
     info: {
       "sessionId": sessionId,
-      "files": fileHandlers.map((e) => e.fileName),
+      "files": fileHandlers.map((e) => e.fileName).toList(),
     },
     askPermission: _askPermission,
   );
@@ -36,15 +37,17 @@ class SendSession with BaseSession {
   @override
   close() async {
     _udpTimer.cancel();
-    _tokenNotifier.dispose();
+    _permissionController.close();
     super.close();
   }
 
-  late final _permissionCompleter = Completer<bool>();
+  final _permissionController = StreamController<PeerModel>.broadcast();
+
+  Stream<PeerModel> get permissionEvents => _permissionController.stream;
+
+  final _permissionTokenCompleters = <PeerModel, Completer<String>>{};
 
   late final Timer _udpTimer;
-
-  final _tokenNotifier = ValueNotifier<String?>(null);
 
   late final _broadcastMessage = Uint8List.fromList([
     ..."NSS".codeUnits,
@@ -59,22 +62,17 @@ class SendSession with BaseSession {
     socket.close();
   }
 
-  Future<String?> _askPermission(String name) async {
-    if (_tokenNotifier.value != null) return null;
-    // emit(SendSessionAskingPermission());
+  Future<String?> _askPermission(PeerModel peer) async {
+    final completer = _permissionTokenCompleters[peer];
+    if (completer != null && completer.isCompleted) return completer.future;
+    if (completer == null) _permissionTokenCompleters[peer] = Completer();
+
+    _permissionController.add(peer);
     try {
-      final isGranted = await _permissionCompleter.future.timeout(
-        Duration(seconds: 20),
-      );
-      if (!isGranted) {
-        // emit(SendSessionBroadcasting());
-        return null;
-      }
-      _tokenNotifier.value = _generateToken();
-      // emit(SendSessionConnected(peerName: "TEST"));
-      return _tokenNotifier.value;
-    } on TimeoutException catch (_) {
-      // emit(SendSessionBroadcasting());
+      final token = await _permissionTokenCompleters[peer]!.future;
+      return token;
+    } catch (_) {
+      _permissionTokenCompleters.remove(peer);
       return null;
     }
   }
@@ -90,6 +88,14 @@ class SendSession with BaseSession {
   FileHandler getFile({required int id, required String token}) {
     // TODO
     throw UnimplementedError();
+  }
+
+  void setPermissionResult({required PeerModel peer, required bool isGranted}) {
+    if (isGranted) {
+      _permissionTokenCompleters[peer]?.complete(_generateToken());
+    } else {
+      _permissionTokenCompleters[peer]?.completeError("permission denied");
+    }
   }
 
   @override

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
@@ -9,7 +10,10 @@ import 'package:nice_share/core/services/sessions/sessions_manager.dart';
 
 class ServerTaskHandler extends TaskHandler {
   final Completer<CustomServer> _server = Completer();
-  final sessionsManager = SessionsManager();
+  final Map<int, Completer<bool>> _permissionCompleters = {};
+  late final sessionsManager = SessionsManager(taskHandler: this);
+
+  Future<int> get serverPort async => (await _server.future).port;
 
   @override
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
@@ -44,32 +48,53 @@ class ServerTaskHandler extends TaskHandler {
   Future<void> onReceiveData(Object data) async {
     debugPrint("DATA RECEIVED FROM MAIN $data");
     if (data is! Map<String, dynamic> ||
-        data["type"] == null ||
-        data["type"] is! String) {
+        (data["type"] != null &&
+        data["type"] is! String)) {
       return;
     }
 
-    final type = data["type"] as String;
+    final type = data["type"] as String?;
     final id = data["id"] as int;
-    final result = <String, Object?>{"id": id};
+    if (type != null) {
+      final result = <String, Object?>{"id": id};
 
-    switch (type) {
-      case "ensure_server_running":
-        result["data"] = (await _server.future).port;
-      case "session":
-        final id = (await _server.future).sessionsManager.addEvent(
-          SessionsEvent.byAction(data["action"] as String, data["payload"]),
-        );
-        result["data"] = {"id": id};
-      case "get_all":
-        final sessions = (await _server.future).sessionsManager.sessions;
-        result["data"] = sessions
-            .map((session) => session.toMap())
-            .toList(growable: false);
+      switch (type) {
+        case "ensure_server_running":
+          result["data"] = (await _server.future).port;
+        case "session":
+          final id = await (await _server.future).sessionsManager.addEvent(
+            SessionsEvent.byAction(data["action"] as String, data["payload"]),
+          );
+          result["data"] = {"id": id};
+        case "get_all":
+          final sessions = (await _server.future).sessionsManager.sessions;
+          result["data"] = sessions
+              .map((session) => session.toMap())
+              .toList(growable: false);
+      }
+
+      FlutterForegroundTask.sendDataToMain(result);
+      debugPrint("DATA SENT TO MAIN: $result");
+    } else {
+      _permissionCompleters[id]?.complete(data["payload"] ?? false);
     }
+  }
 
-    FlutterForegroundTask.sendDataToMain(result);
-    debugPrint("DATA SENT TO MAIN: $result");
+  Future<bool> askPermission({
+    required PeerModel peer,
+    required int sessionId,
+  }) {
+    final completer = Completer<bool>();
+    final messageId = DateTime.now().microsecondsSinceEpoch;
+    _permissionCompleters[messageId] = completer;
+
+    FlutterForegroundTask.sendDataToMain({
+      "type": "ask_permission",
+      "id": messageId,
+      "payload": {"id": sessionId, "peer": peer.toMap},
+    });
+
+    return completer.future.timeout(.new(seconds: 15), onTimeout: () => false);
   }
 
   static Future<void> startServerService() async {

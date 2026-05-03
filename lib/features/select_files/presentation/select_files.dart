@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/core/services/choose_file/select_files_cubit.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart' as path;
+
+import '../logic/select_files_cubit.dart';
 
 class SelectFiles extends StatefulWidget {
   final bool isWeb;
@@ -14,15 +15,15 @@ class SelectFiles extends StatefulWidget {
 
   static Future<void> show(BuildContext context, {bool isWeb = false}) {
     return Platform.isAndroid
-        ? showDialog(
-            context: context,
-            builder: (_) => SelectFiles._(variant: .dialog, isWeb: isWeb),
-          )
-        : showModalBottomSheet(
+        ? showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
             builder: (_) => SelectFiles._(variant: .bottomSheet, isWeb: isWeb),
+          )
+        : showDialog(
+            context: context,
+            builder: (_) => SelectFiles._(variant: .dialog, isWeb: isWeb),
           );
   }
 

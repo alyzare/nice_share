@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 class ServerBridge {
   static final ServerBridge _instance = ServerBridge._();
@@ -11,10 +14,36 @@ class ServerBridge {
 
   ServerBridge._();
 
+  SessionsCubit? _sessionsCubit;
+
+  set sessionsCubit(SessionsCubit value) => _sessionsCubit = value;
+
   void handleMessage(Object data) {
     if (data is! Map<String, dynamic> || data["id"] is! int) return;
 
-    _completers[data["id"]]?.complete(data["data"]);
+    final type = data["type"];
+
+    return type is String && data.isNotEmpty
+        ? _handleRequest(data)
+        : _completers[data["id"]]?.complete(data["data"]);
+  }
+
+  void _handleRequest(Map<String, dynamic> data) async {
+    final String type = data["type"];
+
+    final result = {"id": data["id"]};
+
+    switch (type) {
+      case "ask_permission":
+        final answer = await _sessionsCubit?.askPermission(
+          sessionId: data["payload"]["id"],
+          peer: PeerModel.fromMap(data["payload"]["peer"]),
+        );
+        result["payload"] = answer;
+    }
+
+    FlutterForegroundTask.sendDataToTask(result);
+    debugPrint("DATA SENT TO FOREGROUND: $result");
   }
 
   Future<SessionModel?> createSession(SessionModel sessionBlueprint) async {
@@ -25,17 +54,14 @@ class ServerBridge {
     );
     final id = result["id"] as int? ?? -1;
     if (id > 0) {
-      return SessionModel.fromBlueprint(
-        blueprint: sessionBlueprint,
-        sessionId: id,
-      );
+      final peersMap = result["peers"] as Map<Uint8List, String?>?;
+      return sessionBlueprint.upgrade(id, peersMap);
     }
     return null;
   }
 
   Future<void> stopSession(int sessionId) async {
     await _request("session", action: "remove", payload: {"id": sessionId});
-
   }
 
   Future<List<SessionModel>> getSessions() async {
@@ -60,13 +86,13 @@ class ServerBridge {
     String? action,
     Map<String, Object?> payload = const {},
   }) {
-    final id = DateTime.now().microsecondsSinceEpoch;
+    final messageId = DateTime.now().microsecondsSinceEpoch;
     final completer = Completer<T?>();
-    _completers[id] = completer;
+    _completers[messageId] = completer;
 
     final response = {
       "type": type,
-      "id": id,
+      "id": messageId,
       "action": ?action,
       "payload": payload,
     };
