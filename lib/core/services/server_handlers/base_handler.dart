@@ -3,14 +3,16 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/core/models/message.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
 import 'package:nice_share/core/network/custom_server.dart';
-import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
-import 'package:nice_share/core/services/server_foreground/windows_handler.dart';
+import 'package:nice_share/core/services/server_bridge/server_bridge.dart';
 import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
 
-import 'server_task_handler.dart';
+part 'server_task_handler.dart';
+
+part 'windows_handler.dart';
 
 mixin BaseHandler {
   final server = Completer<CustomServer>();
@@ -21,7 +23,7 @@ mixin BaseHandler {
 
   SessionsManager get sessionsManager;
 
-  void sendDataToUI(Object data);
+  void sendDataToUI(Message message);
 
   Future<void> close();
 
@@ -33,11 +35,13 @@ mixin BaseHandler {
     final messageId = DateTime.now().microsecondsSinceEpoch;
     permissionCompleters[messageId] = completer;
 
-    sendDataToUI({
-      "type": "ask_permission",
-      "id": messageId,
-      "payload": {"id": sessionId, "peer": peer.toMap},
-    });
+    final message = Message(
+      type: .askPermission,
+      id: messageId,
+      payload: {"id": sessionId, "peer": peer.toMap},
+    );
+
+    sendDataToUI(message);
 
     return completer.future.timeout(.new(seconds: 15), onTimeout: () => false);
   }
@@ -47,39 +51,46 @@ mixin BaseHandler {
   );
 
   Future<void> onReceiveData(Object data) async {
-    print("onReceiveData CALLED $data");
     if (data is! Map<String, dynamic> ||
-        (data["type"] != null && data["type"] is! String)) {
+        (data["type"] != null && data["type"] is! int)) {
       return;
     }
 
-    final type = data["type"] as String?;
-    if (type == "ensure_server_running") {
-      print("HELLO");
-    }
-    final id = data["id"] as int;
-    if (type != null) {
-      final result = <String, Object?>{"id": id};
+    final message = Message.fromMap(data);
 
-      switch (type) {
-        case "ensure_server_running":
-          result["data"] = await serverPort;
-        case "session":
+    if (message.type != .unknown) {
+      late final Map<String, Object> payload;
+
+      switch (message.type) {
+        case .ensureServerRunning:
+          payload = {"port": await serverPort};
+        case .session:
+          assert(message.action != null);
           final id = await sessionsManager.addEvent(
-            SessionsEvent.byAction(data["action"] as String, data["payload"]),
+            SessionsEvent.byAction(message.action!, message.payload),
           );
-          result["data"] = {"id": id};
-        case "get_all":
+          payload = {"id": id};
+        case .getAll:
           final sessions = sessionsManager.sessions;
-          result["data"] = sessions
-              .map((session) => session.toMap())
-              .toList(growable: false);
+          payload = {
+            "sessions": sessions
+                .map((session) => session.toMap())
+                .toList(growable: false),
+          };
+        case _:
       }
 
-      sendDataToUI(result);
-      debugPrint("DATA SENT TO MAIN: $result");
+      final resultMessage = Message(
+        type: .unknown,
+        id: message.id,
+        payload: payload,
+      );
+      sendDataToUI(resultMessage);
+      debugPrint("DATA SENT TO MAIN: $resultMessage");
     } else {
-      permissionCompleters[id]?.complete(data["payload"] ?? false);
+      permissionCompleters[message.id]?.complete(
+        (message.payload["answer"] as bool?) ?? false,
+      );
     }
   }
 
@@ -139,7 +150,7 @@ mixin BaseHandler {
 
   Future<void> refresh() async {
     final sessions = sessionsManager.sessions.map((e) => e.toMap()).toList();
-    sendDataToUI({"type": "refresh", "payload": sessions});
+    sendDataToUI(Message(type: .refresh, payload: {"sessions": sessions}));
   }
 }
 

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nice_share/features/home/presentation/components/receive_files.dart';
+import 'package:nice_share/features/find_senders/presentation/find_senders.dart';
 import 'package:nice_share/features/select_files/presentation/select_files.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 import 'package:permission_handler/permission_handler.dart'
@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> {
 
   void _webShare() => SelectFiles.show(context, isWeb: true);
 
-  void _receive() async => ReceiveFiles.show(context);
+  void _receive() async => FindSenders.show(context);
 }
 
 class _ButtonModel {

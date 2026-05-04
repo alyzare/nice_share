@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/features/history/presentation/history_page.dart';
 import 'package:nice_share/features/home/presentation/home_page.dart';
 import 'package:nice_share/features/main/presentation/components/animated_title.dart';
 import 'package:nice_share/features/main/presentation/components/my_nav_bar.dart';
@@ -45,7 +46,7 @@ class _MainShellState extends State<MainShell> {
         extendBody: true,
         body: PagesStack(
           pageController: _pageController,
-          children: [HomePage(), SessionsPage()],
+          children: [HomePage(), SessionsPage(), HistoryPage()],
         ),
         bottomNavigationBar: MyNavBar(controller: _pageController),
       ),

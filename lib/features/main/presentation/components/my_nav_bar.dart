@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class MyNavBar extends StatefulWidget {
   final PageController controller;
+
   const MyNavBar({super.key, required this.controller});
 
   @override
@@ -9,7 +10,11 @@ class MyNavBar extends StatefulWidget {
 }
 
 class _MyNavBarState extends State<MyNavBar> {
-  final items = [Icons.home_rounded, Icons.list_alt_rounded];
+  final items = [
+    Icons.home_rounded,
+    Icons.list_alt_rounded,
+    Icons.history_rounded,
+  ];
 
   late final ValueNotifier<double> _pageNotifier = ValueNotifier(0);
 
@@ -45,7 +50,7 @@ class _MyNavBarState extends State<MyNavBar> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final maxWidth = constraints.maxWidth;
-              final left = (maxWidth / 2) * (page + 0.5) - 35;
+              final left = (maxWidth / 3) * (page + 0.5) - 35;
               return Stack(
                 children: [
                   Positioned(
@@ -103,6 +108,7 @@ class _AnimatedIconButton extends StatefulWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final IconData icon;
+
   const _AnimatedIconButton({
     required this.isSelected,
     required this.onTap,
@@ -110,10 +116,10 @@ class _AnimatedIconButton extends StatefulWidget {
   });
 
   @override
-  State<_AnimatedIconButton> createState() => __AnimatedIconButtonState();
+  State<_AnimatedIconButton> createState() => _AnimatedIconButtonState();
 }
 
-class __AnimatedIconButtonState extends State<_AnimatedIconButton> {
+class _AnimatedIconButtonState extends State<_AnimatedIconButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(

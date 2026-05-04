@@ -1,7 +1,4 @@
-import 'dart:async';
-
-import 'package:nice_share/core/services/server_foreground/base_handler.dart';
-import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
+part of 'base_handler.dart';
 
 class WindowsHandler with BaseHandler {
   @override
@@ -13,11 +10,11 @@ class WindowsHandler with BaseHandler {
   }
 
   @override
-  void sendDataToUI(Object data) => _messageController.sink.add(data);
+  void sendDataToUI(Message message) => _messageController.sink.add(message);
 
-  final _messageController = StreamController<Object>.broadcast();
+  final _messageController = StreamController<Message>.broadcast();
 
-  void addHandler(void Function(Object data) callback) =>
+  void addHandler(void Function(Message message) callback) =>
       _messageController.stream.listen(callback);
 
   static WindowsHandler get instance => _instance;

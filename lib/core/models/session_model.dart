@@ -84,7 +84,7 @@ abstract class SessionModel {
     }
   }
 
-  Map<String, Object?> toMap() => {
+  Map<String, Object> get toMap => {
     "id": sessionId,
     "files": files.map((e) => e.path).toList(),
     "type": type.index,

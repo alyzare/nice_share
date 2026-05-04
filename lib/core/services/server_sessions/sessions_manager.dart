@@ -5,10 +5,10 @@ import 'package:nice_share/core/models/receive_session_model.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
-import 'package:nice_share/core/services/server_foreground/global_id_service.dart';
+import 'package:nice_share/core/services/server_handlers/base_handler.dart';
 import 'package:nice_share/core/services/server_sessions/receive_session.dart';
+import 'package:nice_share/core/utils.dart';
 
-import '../server_foreground/base_handler.dart';
 import 'base_session.dart';
 import 'send_session.dart';
 import 'web_session.dart';
@@ -46,7 +46,7 @@ class SessionsManager {
     switch (event.session.type) {
       case SessionType.send:
         final session = SendSession(
-          sessionId: GlobalIdService.newId,
+          sessionId: newGlobalId,
           fileHandlers: event.session.files
               .map((e) => FileHandler(file: e))
               .toList(),
@@ -86,7 +86,7 @@ class SessionsManager {
           fileHandlers: event.session.files
               .map((e) => FileHandler(file: e))
               .toList(),
-          sessionId: GlobalIdService.newId,
+          sessionId: newGlobalId,
         );
         _sessions.add(session);
         return session.sessionId;

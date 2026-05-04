@@ -1,9 +1,4 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:nice_share/core/services/server_foreground/base_handler.dart';
-import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
+part of 'base_handler.dart';
 
 class ServerTaskHandler extends TaskHandler with BaseHandler {
   @override
@@ -12,7 +7,7 @@ class ServerTaskHandler extends TaskHandler with BaseHandler {
   @override
   Future<void> close() async {
     (await server.future).close();
-    sendDataToUI({"type": "server_stopped"});
+    sendDataToUI(Message(type: .serverStopped));
   }
 
   @override
@@ -42,5 +37,6 @@ class ServerTaskHandler extends TaskHandler with BaseHandler {
   }
 
   @override
-  void sendDataToUI(Object data) => FlutterForegroundTask.sendDataToMain(data);
+  void sendDataToUI(Message message) =>
+      FlutterForegroundTask.sendDataToMain(message.toMap);
 }

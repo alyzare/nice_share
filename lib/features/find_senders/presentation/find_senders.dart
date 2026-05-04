@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/sender.dart';
-import 'package:nice_share/core/services/find_senders/find_senders_cubit.dart';
+import 'package:nice_share/features/find_senders/logic/find_senders_cubit.dart';
 
-class ReceiveFiles extends StatefulWidget {
-  const ReceiveFiles._();
+class FindSenders extends StatefulWidget {
+  const FindSenders._();
 
   @override
-  State<ReceiveFiles> createState() => _ReceiveFilesState();
+  State<FindSenders> createState() => _FindSendersState();
 
   static Future<void> show(BuildContext context) {
     return Platform.isAndroid
@@ -17,13 +17,13 @@ class ReceiveFiles extends StatefulWidget {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => ReceiveFiles._(),
+            builder: (context) => FindSenders._(),
           )
-        : showDialog(context: context, builder: (context) => ReceiveFiles._());
+        : showDialog(context: context, builder: (context) => FindSenders._());
   }
 }
 
-class _ReceiveFilesState extends State<ReceiveFiles> {
+class _FindSendersState extends State<FindSenders> {
   late final _cubit = FindSendersCubit(sessionsCubit: context.read());
 
   @override

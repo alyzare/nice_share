@@ -28,3 +28,7 @@ String formattedSize(int size) {
 Future<Directory?> getDownloadDirectory() async => Platform.isAndroid
     ? Directory("/storage/emulated/0")
     : await getDownloadsDirectory();
+
+int _counter = 1;
+
+int get newGlobalId => _counter++;

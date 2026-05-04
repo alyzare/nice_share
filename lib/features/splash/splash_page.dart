@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:nice_share/core/services/server_foreground/base_handler.dart';
-import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
+import 'package:nice_share/core/services/server_bridge/server_bridge.dart';
+import 'package:nice_share/core/services/server_handlers/base_handler.dart';
 import 'package:nice_share/features/main/presentation/main_shell.dart';
 
 class SplashPage extends StatefulWidget {

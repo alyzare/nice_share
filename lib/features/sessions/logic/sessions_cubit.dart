@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/send_session_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
-import 'package:nice_share/core/services/server_foreground/server_bridge.dart';
+import 'package:nice_share/core/services/server_bridge/server_bridge.dart';
 
 class SessionsCubit extends Cubit<List<SessionModel>> {
   ServerBridge get server => ServerBridge.instance;

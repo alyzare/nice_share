@@ -2,8 +2,8 @@ import 'package:nice_share/core/models/sender.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/request_helper.dart';
-import 'package:nice_share/core/services/server_foreground/global_id_service.dart';
 import 'package:nice_share/core/services/server_sessions/base_session.dart';
+import 'package:nice_share/core/utils.dart';
 
 class ReceiveSession with BaseSession {
   @override
@@ -52,7 +52,7 @@ class ReceiveSession with BaseSession {
       final files = await FileHandler.listToReceive(filesInfo);
 
       return ReceiveSession._(
-        sessionId: GlobalIdService.newId,
+        sessionId: newGlobalId,
         fileHandlers: files,
         sender: sender,
         requestHelper: requestHelper,
