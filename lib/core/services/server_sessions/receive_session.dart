@@ -16,7 +16,7 @@ class ReceiveSession with BaseSession {
   SessionType get type => .receive;
 
   @override
-  Map<String, Object?> toMap() {
+  Map<String, dynamic> toMap() {
     return super.toMap()..addAll({"sender": sender.toMap});
   }
 
