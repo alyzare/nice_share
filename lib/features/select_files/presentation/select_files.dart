@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart' as path;
 
@@ -57,7 +58,12 @@ class _SelectFilesState extends State<SelectFiles> {
                 separatorBuilder: (_, _) => const Divider(),
                 itemBuilder: (context, index) {
                   if (state is LoadingFiles && index == state.files.length) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: LoadingAnimationWidget.progressiveDots(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        size: 20,
+                      ),
+                    );
                   }
 
                   final file = state.files[index];

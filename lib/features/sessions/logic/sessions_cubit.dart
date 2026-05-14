@@ -10,6 +10,7 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
   ServerBridge get server => ServerBridge.instance;
 
   SessionsCubit() : super(List.unmodifiable([])) {
+    ServerBridge.instance.sessionsCubit = this;
     updateSessions();
   }
 

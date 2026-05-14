@@ -26,9 +26,8 @@ class FileHandler {
     });
   }
 
-  Future<void> receive(Stream<List<int>> bytes) {
-    final sink = _file.openWrite();
-    return sink.addStream(bytes);
+  void receive() {
+
   }
 
   bool get fileExists => _file.existsSync();
