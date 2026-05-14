@@ -7,7 +7,7 @@ class ServerTaskHandler extends TaskHandler with BaseHandler {
   @override
   Future<void> close() async {
     (await server.future).close();
-    sendDataToUI(Message(type: .serverStopped));
+    sendDataToUI(IdleMessage(action: .serverStopped));
   }
 
   @override

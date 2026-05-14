@@ -8,40 +8,54 @@ import 'package:nice_share/core/models/message.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
 import 'package:nice_share/core/services/server_handlers/base_handler.dart';
-import 'package:nice_share/core/utils.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 class ServerBridge {
   set sessionsCubit(SessionsCubit value) => _sessionsCubit = value;
 
-  void handleMessage(Object data) {
-    if (data is! Map<String, Object> && data is! Message) return;
+  void handleMessage(dynamic data) {
+    if (data is! Map<String, dynamic> && data is! Message) return;
 
     final message = data is Message
         ? data
-        : Message.fromMap(data as Map<String, Object>);
-    if (message.type != .unknown) {
-      return _handleRequest(message);
-    } else if (message.id != null) {
-      _completers[message.id]?.complete(message);
+        : Message.fromMap(data as Map<String, dynamic>);
+
+    switch (message.type) {
+      case MessageType.request:
+        _handleRequest(message as RequestMessage);
+      case MessageType.response:
+        _completers[message.id]?.complete(message as ResponseMessage);
+      case MessageType.idle:
+        _handleIdleMessage(message as IdleMessage);
     }
   }
 
-  void _handleRequest(Message message) async {
-    final Map<String, Object> payload = {};
+  void _handleRequest(RequestMessage message) async {
+    final Map<String, dynamic> payload = {};
 
-    switch (message.type) {
+    switch (message.action) {
       case .askPermission:
+        if (message.payload == null) return;
         final answer = await _sessionsCubit?.askPermission(
-          sessionId: message.payload["id"] as int,
+          sessionId: message.payload!["id"] as int,
           peer: PeerModel.fromMap(
-            message.payload["peer"] as Map<String, Object?>,
+            message.payload!["peer"] as Map<String, dynamic>,
           ),
         );
         payload.addAll({"answer": answer ?? false});
+
+      case _:
+    }
+    final response = ResponseMessage.ofRequest(message, payload: payload);
+    sendDataToServer(response);
+  }
+
+  void _handleIdleMessage(IdleMessage message) {
+    switch (message.action) {
       case .refresh:
+        if (message.payload == null) return;
         final sessionsData =
-            message.payload["sessions"] as List<Map<String, Object?>>;
+            message.payload!["sessions"] as List<Map<String, dynamic>>;
         _sessionsCubit?.refresh(
           sessionsData
               .map((data) => SessionModel.fromMap(data))
@@ -49,12 +63,6 @@ class ServerBridge {
         );
       case _:
     }
-    final resultMessage = Message(
-      type: .unknown,
-      id: message.id,
-      payload: payload,
-    );
-    if (resultMessage.id != null) sendDataToServer(resultMessage);
   }
 
   void sendDataToServer(Message message) => Platform.isAndroid
@@ -62,46 +70,36 @@ class ServerBridge {
       : WindowsHandler.instance.onReceiveData(message.toMap);
 
   Future<SessionModel?> createSession(SessionModel sessionBlueprint) async {
-    final message = Message(
-      id: newGlobalId,
-      type: .session,
-      action: .add,
+    final message = RequestMessage(
+      action: .addSession,
       payload: sessionBlueprint.toMap,
     );
-    final resultMessage = await _request(message);
+    final response = await _request(message);
 
-    if ((resultMessage?.id ?? -1) > 0) {
-      final peersMap =
-          resultMessage!.payload["peers"] as Map<Uint8List, String?>?;
-      return sessionBlueprint.upgrade(resultMessage.payload["id"] as int, peersMap);
+    if ((response?.payload!["id"] as int? ?? -1) > 0) {
+      final peersMap = response!.payload!["peers"] as Map<Uint8List, String?>?;
+      return sessionBlueprint.upgrade(response.payload!["id"] as int, peersMap);
     }
     return null;
   }
 
   Future<void> stopSession(int sessionId) async {
     await _request(
-      Message(
-        id: newGlobalId,
-        type: .session,
-        action: .remove,
-        payload: {"id": sessionId},
-      ),
+      RequestMessage(action: .stopSession, payload: {"id": sessionId}),
     );
   }
 
   Future<void> ensureServerRunning() async {
-    final result = await _request(
-      Message(id: newGlobalId, type: .ensureServerRunning),
-    );
-    _port = result!.payload["port"] as int;
+    final result = await _request(RequestMessage(action: .ensureServerRunning));
+    _port = result!.payload!["port"] as int;
     debugPrint(_port.toString());
   }
 
   Future<List<SessionModel>> getSessions() async {
-    final result = await _request(Message(id: newGlobalId, type: .getAll));
+    final result = await _request(RequestMessage(action: .getAll));
 
-    final List<Map<String, Object?>> sessionsData =
-        (result?.payload["sessions"] as List<Map<String, Object?>>?) ?? [];
+    final List<Map<String, dynamic>> sessionsData =
+        (result?.payload!["sessions"] as List<Map<String, dynamic>>?) ?? [];
 
     return sessionsData
         .map((data) => SessionModel.fromMap(data))
@@ -110,15 +108,15 @@ class ServerBridge {
 
   late final int _port;
 
-  final Map<int, Completer<Message?>> _completers = {};
+  final Map<int, Completer<ResponseMessage>> _completers = {};
 
   SessionsCubit? _sessionsCubit;
 
   int get port => _port;
 
-  Future<Message?> _request(Message message) {
-    final completer = Completer<Message?>();
-    _completers[message.id!] = completer;
+  Future<ResponseMessage?> _request(RequestMessage message) {
+    final completer = Completer<ResponseMessage>();
+    _completers[message.id] = completer;
 
     sendDataToServer(message);
     return completer.future;

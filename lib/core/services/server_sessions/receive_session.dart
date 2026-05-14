@@ -52,7 +52,7 @@ class ReceiveSession with BaseSession {
       final files = await FileHandler.listToReceive(filesInfo);
 
       return ReceiveSession._(
-        sessionId: newGlobalId,
+        sessionId: newSessionId,
         fileHandlers: files,
         sender: sender,
         requestHelper: requestHelper,

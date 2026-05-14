@@ -20,7 +20,7 @@ abstract class SessionModel {
     required this.type,
   });
 
-  static SessionModel fromMap(Map<String, Object?> payload) {
+  static SessionModel fromMap(Map<String, dynamic> payload) {
     final sessionId = payload["id"] as int? ?? -1;
     final files =
         (payload["files"] as List?)?.map((e) => File(e)).toList() ?? [];
@@ -31,12 +31,12 @@ abstract class SessionModel {
         sessionId: sessionId,
         files: files,
         createPermissionCubit: true,
-        peers: (payload["peers"] as List<Map<String, Object?>>?)
+        peers: (payload["peers"] as List<Map<String, dynamic>>?)
             ?.map((e) => PeerModel.fromMap(e))
             .toList(),
       ),
       SessionType.receive => ReceiveSessionModel(
-        sender: Sender.fromMap(payload["sender"] as Map<String, Object>),
+        sender: Sender.fromMap(payload["sender"] as Map<String, dynamic>),
         files: files,
         sessionId: sessionId,
       ),
@@ -84,7 +84,7 @@ abstract class SessionModel {
     }
   }
 
-  Map<String, Object> get toMap => {
+  Map<String, dynamic> get toMap => {
     "id": sessionId,
     "files": files.map((e) => e.path).toList(),
     "type": type.index,

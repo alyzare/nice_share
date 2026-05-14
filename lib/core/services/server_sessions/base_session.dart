@@ -37,7 +37,7 @@ mixin BaseSession {
     }
   }
 
-  Map<String, Object?> toMap() => {
+  Map<String, dynamic> toMap() => {
     "sessionId": sessionId,
     "files": fileHandlers.map((e) => e.fileName).toList(),
     "type": type.index,

@@ -32,14 +32,13 @@ mixin BaseHandler {
     required int sessionId,
   }) {
     final completer = Completer<bool>();
-    final messageId = DateTime.now().microsecondsSinceEpoch;
-    permissionCompleters[messageId] = completer;
 
-    final message = Message(
-      type: .askPermission,
-      id: messageId,
+    final message = RequestMessage(
+      action: .askPermission,
       payload: {"id": sessionId, "peer": peer.toMap},
     );
+
+    permissionCompleters[message.id] = completer;
 
     sendDataToUI(message);
 
@@ -50,7 +49,7 @@ mixin BaseHandler {
     await CustomServer.start(sessionManager: sessionsManager),
   );
 
-  Future<void> onReceiveData(Object data) async {
+  Future<void> onReceiveData(dynamic data) async {
     if (data is! Map<String, dynamic> ||
         (data["type"] != null && data["type"] is! int)) {
       return;
@@ -58,39 +57,13 @@ mixin BaseHandler {
 
     final message = Message.fromMap(data);
 
-    if (message.type != .unknown) {
-      late final Map<String, Object> payload;
-
-      switch (message.type) {
-        case .ensureServerRunning:
-          payload = {"port": await serverPort};
-        case .session:
-          assert(message.action != null);
-          final id = await sessionsManager.addEvent(
-            SessionsEvent.byAction(message.action!, message.payload),
-          );
-          payload = {"id": id};
-        case .getAll:
-          final sessions = sessionsManager.sessions;
-          payload = {
-            "sessions": sessions
-                .map((session) => session.toMap())
-                .toList(growable: false),
-          };
-        case _:
-      }
-
-      final resultMessage = Message(
-        type: .unknown,
-        id: message.id,
-        payload: payload,
-      );
-      sendDataToUI(resultMessage);
-      debugPrint("DATA SENT TO MAIN: $resultMessage");
-    } else {
-      permissionCompleters[message.id]?.complete(
-        (message.payload["answer"] as bool?) ?? false,
-      );
+    switch (message.type) {
+      case MessageType.request:
+        _handleRequest(message as RequestMessage);
+      case MessageType.response:
+        _handleResponse(message as ResponseMessage);
+      case MessageType.idle:
+        _handleIdleMessage(message as IdleMessage);
     }
   }
 
@@ -101,6 +74,62 @@ mixin BaseHandler {
       return _startWindowsService();
     }
     throw UnsupportedError("Unsupported platform");
+  }
+
+  void refresh() => sendDataToUI(
+    IdleMessage(
+      action: .refresh,
+      payload: {
+        "sessions": sessionsManager.sessions.map((e) => e.toMap()).toList(),
+      },
+    ),
+  );
+
+  Future<void> _handleRequest(RequestMessage request) async {
+    final payload = <String, dynamic>{};
+
+    switch (request.action) {
+      case .ensureServerRunning:
+        payload["port"] = await serverPort;
+      case .addSession:
+        final id = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .add, payload: payload),
+        );
+        payload["id"] = id;
+      case .stopSession:
+        final id = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .stop, payload: payload),
+        );
+        payload["id"] = id;
+      case .updateSession:
+        final id = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .update, payload: payload),
+        );
+        payload["id"] = id;
+      case .getAll:
+        final sessions = sessionsManager.sessions;
+        payload["sessions"] = sessions
+            .map((session) => session.toMap())
+            .toList(growable: false);
+      case _:
+    }
+
+    final response = ResponseMessage.ofRequest(request, payload: payload);
+    sendDataToUI(response);
+  }
+
+  void _handleResponse(ResponseMessage response) {
+    switch (response.action) {
+      case .askPermission:
+        permissionCompleters[response.id]?.complete(
+          (response.payload?["answer"] as bool?) ?? false,
+        );
+      case _:
+    }
+  }
+
+  void _handleIdleMessage(IdleMessage message) {
+    throw UnimplementedError();
   }
 
   static Future<void> _startAndroidService() async {
@@ -146,11 +175,6 @@ mixin BaseHandler {
   static Future<void> _startWindowsService() async {
     await WindowsHandler.instance.start();
     WindowsHandler.instance.addHandler(ServerBridge.instance.handleMessage);
-  }
-
-  Future<void> refresh() async {
-    final sessions = sessionsManager.sessions.map((e) => e.toMap()).toList();
-    sendDataToUI(Message(type: .refresh, payload: {"sessions": sessions}));
   }
 }
 

@@ -46,7 +46,7 @@ class SessionsManager {
     switch (event.session.type) {
       case SessionType.send:
         final session = SendSession(
-          sessionId: newGlobalId,
+          sessionId: newSessionId,
           fileHandlers: event.session.files
               .map((e) => FileHandler(file: e))
               .toList(),
@@ -70,8 +70,7 @@ class SessionsManager {
           );
           session.addOnCloseCallback(() async {
             _sessions.remove(session);
-            await handler.refresh();
-            print("HELO");
+            handler.refresh();
           });
           _sessions.add(session);
           return session.sessionId;
@@ -86,7 +85,7 @@ class SessionsManager {
           fileHandlers: event.session.files
               .map((e) => FileHandler(file: e))
               .toList(),
-          sessionId: newGlobalId,
+          sessionId: newSessionId,
         );
         _sessions.add(session);
         return session.sessionId;

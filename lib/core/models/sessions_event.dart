@@ -1,15 +1,16 @@
-import 'package:nice_share/core/models/message.dart';
 import 'package:nice_share/core/models/session_model.dart';
 
 sealed class SessionsEvent {
-  static SessionsEvent byAction(
-    RequestAction action,
-    Map<String, Object> payload,
-  ) {
+  static SessionsEvent fromPayload({
+    required RequestAction action,
+    required Map<String, dynamic> payload,
+  }) {
+    assert(payload["action"] is int);
+    final action = RequestAction.values[payload["action"]];
     switch (action) {
       case .add:
         return SessionAddedEvent(SessionModel.fromMap(payload));
-      case .remove:
+      case .stop:
         return SessionRemovedEvent(payload["id"] as int?);
       case .update:
         throw UnimplementedError();
@@ -34,3 +35,5 @@ class SessionRemovedEvent extends SessionsEvent {
 
   SessionRemovedEvent(this.id);
 }
+
+enum RequestAction { add, update, stop }

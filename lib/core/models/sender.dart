@@ -8,7 +8,7 @@ class Sender {
 
   Sender({required this.address, required this.port, required this.sessionId});
 
-  static Sender fromMap(Map<String, Object> payload) {
+  static Sender fromMap(Map<String, dynamic> payload) {
     return Sender(
       address: InternetAddress.fromRawAddress(payload["ip"] as Uint8List),
       port: payload['port'] as int,
@@ -16,7 +16,7 @@ class Sender {
     );
   }
 
-  Map<String, Object> get toMap => {
+  Map<String, dynamic> get toMap => {
     "ip": address.rawAddress,
     "port": port,
     "sender_id": sessionId,
@@ -26,8 +26,7 @@ class Sender {
   bool operator ==(Object other) {
     if (other is! Sender) return false;
 
-    return
-        other.address == address &&
+    return other.address == address &&
         other.sessionId == sessionId &&
         other.port == port;
   }

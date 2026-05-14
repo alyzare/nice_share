@@ -29,6 +29,21 @@ Future<Directory?> getDownloadDirectory() async => Platform.isAndroid
     ? Directory("/storage/emulated/0")
     : await getDownloadsDirectory();
 
-int _counter = 1;
+Future<List<InternetAddress>> myIps() async {
+  return NetworkInterface.list().then(
+    (list) => list
+        .map(
+          (i) => i.addresses.firstWhere(
+            (element) => element.type == .IPv4 && !element.isLoopback,
+          ),
+        )
+        .toList(),
+  );
+}
 
-int get newGlobalId => _counter++;
+int _messageCounter = 1;
+int _sessionCounter = 1;
+
+int get newMessageId => _messageCounter++;
+
+int get newSessionId => _sessionCounter++;

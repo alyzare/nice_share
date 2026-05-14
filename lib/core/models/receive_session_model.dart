@@ -11,6 +11,6 @@ class ReceiveSessionModel extends SessionModel {
   }) : super(type: .receive);
 
   @override
-  Map<String, Object> get toMap =>
+  Map<String, dynamic> get toMap =>
       super.toMap..addAll({"sender": sender.toMap});
 }

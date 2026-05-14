@@ -17,7 +17,7 @@ class RequestHelper {
     ),
   );
 
-  Future<Map<String, Object>> getInfo() async {
+  Future<Map<String, dynamic>> getInfo() async {
     try {
       final response = await _dio.get(
         '/session/${_sender.sessionId}',

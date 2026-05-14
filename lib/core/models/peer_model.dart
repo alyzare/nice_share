@@ -15,9 +15,9 @@ class PeerModel {
   @override
   int get hashCode => ip.hashCode ^ name.hashCode;
 
-  PeerModel.fromMap(Map<String, Object?> map)
+  PeerModel.fromMap(Map<String, dynamic> map)
     : ip = InternetAddress.fromRawAddress(map["ip"] as Uint8List),
       name = map["name"] as String?;
 
-  Map<String, Object?> get toMap => {"ip": ip.rawAddress, "name": name};
+  Map<String, dynamic> get toMap => {"ip": ip.rawAddress, "name": name};
 }

@@ -1,43 +1,80 @@
-class Message {
-  final MessageType type;
-  final int? id;
-  final RequestAction? action;
-  final Map<String, Object> payload;
+import 'package:nice_share/core/utils.dart';
 
-  Message({required this.type, this.id, this.payload = const {}, this.action});
+sealed class Message {
+  final MessageAction action;
+  final int id;
+  final Map<String, dynamic>? payload;
 
-  Map<String, Object> get toMap => {
-    "id": ?id,
+  Message({required this.action, required this.id, this.payload});
+
+  MessageType get type;
+
+  Map<String, dynamic> get toMap => {
+    "id": id,
     "type": type.index,
-    if (action != null) "action": action!.index,
+    "action": action.index,
     "payload": payload,
   };
 
-  static Message fromMap(Map<String, Object?> data) {
-    final type = MessageType.values[data["type"] as int? ?? 0];
-    final id = data["id"] as int?;
-    final payload = data["payload"] as Map<String, Object>?;
-    final actionIndex = data["action"] as int?;
-    return Message(
-      id: id,
-      type: type,
-      payload: payload ?? {},
-      action: actionIndex == null ? null : RequestAction.values[actionIndex],
-    );
+  static Message fromMap(Map<String, dynamic> data) {
+    final type = MessageType.values[data["type"] as int];
+    final action = MessageAction.values[data["action"] as int];
+    final id = data["id"] as int;
+    final payload = data["payload"] as Map<String, dynamic>?;
+
+    switch (type) {
+      case MessageType.request:
+        return RequestMessage(action: action, id: id, payload: payload);
+      case MessageType.response:
+        return ResponseMessage(action: action, id: id, payload: payload);
+      case MessageType.idle:
+        return IdleMessage(action: action, payload: payload);
+    }
   }
 
   @override
-  String toString() => toMap.toString();
+  String toString() =>
+      (toMap
+            ..update("type", (value) => MessageType.values[value].name)
+            ..update("action", (value) => MessageAction.values[value].name))
+          .toString();
 }
 
-enum MessageType {
+class RequestMessage extends Message {
+  RequestMessage({required super.action, super.payload, int? id})
+    : super(id: id ?? newMessageId);
+
+  @override
+  MessageType get type => .request;
+}
+
+class ResponseMessage extends Message {
+  ResponseMessage.ofRequest(RequestMessage request, {super.payload})
+    : super(action: request.action, id: request.id);
+
+  ResponseMessage({required super.action, required super.id, super.payload});
+
+  @override
+  MessageType get type => .response;
+}
+
+class IdleMessage extends Message {
+  IdleMessage({required super.action, super.payload}) : super(id: -1);
+
+  @override
+  MessageType get type => .idle;
+}
+
+enum MessageAction {
   unknown,
   askPermission,
   refresh,
-  session,
+  addSession,
+  stopSession,
+  updateSession,
   ensureServerRunning,
   getAll,
   serverStopped,
 }
 
-enum RequestAction { add, remove, update }
+enum MessageType { request, response, idle }
