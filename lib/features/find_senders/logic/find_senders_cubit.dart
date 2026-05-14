@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/sender.dart';
 import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/utils.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
@@ -19,7 +20,7 @@ class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
 
   Future<void> _initUdpSocket() async {
     _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 12459);
-    _subscription = _udpSocket.listen((event) {
+    _subscription = _udpSocket.listen((event) async {
       if (event != RawSocketEvent.read) return;
 
       final datagram = _udpSocket.receive();
@@ -34,12 +35,18 @@ class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
       final port = ByteData.sublistView(
         datagram.data.sublist(11, 15),
       ).getUint32(0);
+      final peerName = String.fromCharCodes(datagram.data.sublist(15));
       final sender = Sender(
         address: datagram.address,
         port: port,
         sessionId: sessionId,
+        peerName: peerName,
       );
-      if (state.containsKey(sender)) return;
+
+      if ((await myIps()).contains(datagram.address) ||
+          state.containsKey(sender)) {
+        return;
+      }
 
       emit(Map.unmodifiable({...state, sender: SenderStatus.idle}));
     });

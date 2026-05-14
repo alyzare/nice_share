@@ -5,14 +5,21 @@ class Sender {
   final InternetAddress address;
   final int port;
   final int sessionId;
+  final String? peerName;
 
-  Sender({required this.address, required this.port, required this.sessionId});
+  Sender({
+    required this.address,
+    required this.port,
+    required this.sessionId,
+    this.peerName,
+  });
 
   static Sender fromMap(Map<String, dynamic> payload) {
     return Sender(
       address: InternetAddress.fromRawAddress(payload["ip"] as Uint8List),
       port: payload['port'] as int,
       sessionId: payload["sender_id"] as int,
+      peerName: payload["peer_name"] as String?,
     );
   }
 
@@ -20,6 +27,7 @@ class Sender {
     "ip": address.rawAddress,
     "port": port,
     "sender_id": sessionId,
+    "peer_name": ?peerName,
   };
 
   @override

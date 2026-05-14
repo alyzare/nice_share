@@ -58,16 +58,53 @@ class _FindSendersState extends State<FindSenders> {
                           onTap: entry.value.canRequest
                               ? () => _cubit.sessionSelected(entry.key)
                               : null,
-                          title: Text(
-                            "0x${entry.key.sessionId.toRadixString(16)} : ${entry.key.address}",
+                          title: Row(
+                            mainAxisSize: .min,
+                            spacing: 10,
+                            children: [
+                              Container(
+                                height: 30,
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    entry.key.peerName ??
+                                        "[${entry.key.address.address}]",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Text("Session: ${entry.key.sessionId}"),
+                            ],
                           ),
-                          leading: entry.value.canRequest
+
+                          trailing: entry.value.canRequest
                               ? SizedBox.shrink()
                               : entry.value == .asking
-                              ? CircularProgressIndicator()
+                              ? SizedBox.square(
+                                  dimension: 25,
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withAlpha(128),
+                                    strokeCap: .round,
+                                    strokeWidth: 7.5,
+                                  ),
+                                )
                               : Icon(
-                                  Icons.done_outline_rounded,
+                                  Icons.done_rounded,
                                   color: Colors.green,
+                                  size: 30,
                                 ),
                         );
                       },

@@ -7,6 +7,7 @@ import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/handlers/info_handler.dart';
+import 'package:nice_share/core/services/pref/pref_service.dart';
 
 import 'base_session.dart';
 
@@ -55,6 +56,7 @@ class SendSession with BaseSession {
     ..."NSS".codeUnits,
     ...(ByteData(8)..setInt64(0, sessionId)).buffer.asUint8List(),
     ...(ByteData(4)..setInt32(0, serverPort)).buffer.asUint8List(),
+    ...PrefService.peerName.codeUnits,
   ]);
 
   Future<void> _broadcastAddress(Timer timer) async {
