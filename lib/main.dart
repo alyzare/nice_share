@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/services/pref/pref_service.dart';
-import 'package:nice_share/features/global_notifications/presentation/global_notifications.dart';
 import 'package:nice_share/nice_share_app.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,9 +17,12 @@ Future<void> main() async {
   });
 
   runApp(
-    BlocProvider(
-      create: (_) => SessionsCubit(),
-      child: GlobalNotifications(child: NiceShareApp()),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => SessionsCubit()),
+        RepositoryProvider(create: (_) => GlobalKey<NavigatorState>()),
+      ],
+      child: NiceShareApp(),
     ),
   );
 }

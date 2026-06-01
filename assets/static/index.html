@@ -1,18 +1,44 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/static/style.css" />
-    <dart_script />
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <script src="/static/upload.js" defer></script>
     <title>Nice Share</title>
-  </head>
+</head>
 
-  <body>
-    <div class="container">
-      <dart_title />
-      <dart_form />
-      <div id="progressContainer" class="progress-container"></div>
-      <dart />
+<body>
+<div class="container">
+    <dart_title/>
+
+    <!-- Upload Area - Transforms from square to list -->
+    <div id="uploadArea" class="upload-area">
+        <div id="dropZone" class="drop-zone">
+            <div class="drop-zone-content">
+                <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="drop-zone-text">Browse or drag files here</p>
+                <input type="file" id="fileInput" multiple style="display: none;"/>
+                <button type="button" id="browseButton" class="browse-btn">Browse Files</button>
+            </div>
+        </div>
+
+        <!-- File List (appears inside the same area when files are added) -->
+        <div id="fileListContainer" class="file-list-container" style="display: none;">
+            <div id="fileList" class="file-list"></div>
+            <button id="startUploadBtn" class="upload-btn">Upload Files</button>
+        </div>
     </div>
-  </body>
+
+    <!-- Progress Container (During Upload) -->
+    <div id="progressContainer" class="progress-container" style="display: none;"></div>
+
+    <dart/>
+</div>
+</body>
 </html>

@@ -2,9 +2,6 @@ part of 'base_handler.dart';
 
 class ServerTaskHandler extends TaskHandler with BaseHandler {
   @override
-  late final sessionsManager = SessionsManager(handler: this);
-
-  @override
   Future<void> close() async {
     (await server.future).close();
     sendDataToUI(IdleMessage(action: .serverStopped));

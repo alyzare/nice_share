@@ -1,7 +1,7 @@
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/services/permission/permission_cubit.dart';
-import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
+import 'permission_request.dart';
 import 'session_model.dart';
 
 class SendSessionModel extends SessionModel {

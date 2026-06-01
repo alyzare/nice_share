@@ -2,9 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nice_share/core/components/responsive_modal.dart';
+import 'package:nice_share/features/find_senders/logic/find_senders_cubit.dart';
 import 'package:nice_share/features/find_senders/presentation/find_senders.dart';
+import 'package:nice_share/features/info/presentation/info.dart';
+import 'package:nice_share/features/select_files/logic/select_files_cubit.dart';
 import 'package:nice_share/features/select_files/presentation/select_files.dart';
-import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
 
@@ -22,7 +25,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  late final _buttonMap = [
+  late final _buttonsMap = [
     _ButtonModel(title: "Send", onTap: _send, icon: Icons.send_rounded),
     _ButtonModel(
       title: "Web Share",
@@ -48,7 +51,7 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: .spaceEvenly,
               spacing: 10,
-              children: _buttonMap
+              children: _buttonsMap
                   .map(
                     (e) => IconButton.filledTonal(
                       onPressed: e.onTap,
@@ -84,19 +87,11 @@ class _HomePageState extends State<HomePage> {
                   .toList(),
             ),
             Center(
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: "Port: "),
-                    TextSpan(
-                      text: context
-                          .read<SessionsCubit>()
-                          .server
-                          .port
-                          .toString(),
-                      style: TextStyle(fontWeight: .bold),
-                    ),
-                  ],
+              child: SizedBox(
+                width: 100,
+                child: ElevatedButton(
+                  onPressed: _showInfo,
+                  child: Text("Info"),
                 ),
               ),
             ),
@@ -119,11 +114,31 @@ class _HomePageState extends State<HomePage> {
     debugPrint(result.toString());
   }
 
-  void _send() => SelectFiles.show(context);
+  void _send() => context.showResponsiveModal(
+    isScrollable: true,
+    child: BlocProvider(
+      create: (_) => SelectFilesCubit(context.read()),
+      child: SelectFiles(),
+    ),
+  );
 
-  void _webShare() => SelectFiles.show(context, isWeb: true);
+  void _webShare() => context.showResponsiveModal(
+    isScrollable: true,
+    child: BlocProvider(
+      create: (_) => SelectFilesCubit(context.read(), isWeb: true),
+      child: SelectFiles(),
+    ),
+  );
 
-  void _receive() async => FindSenders.show(context);
+  void _receive() => context.showResponsiveModal(
+    isScrollable: true,
+    child: BlocProvider(
+      create: (_) => FindSendersCubit(sessionsCubit: context.read()),
+      child: FindSenders(),
+    ),
+  );
+
+  void _showInfo() => context.showResponsiveModal(child: Info());
 }
 
 class _ButtonModel {

@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nice_share/core/helper.dart';
 import 'package:nice_share/core/models/sender.dart';
 import 'package:nice_share/core/models/session_model.dart';
-import 'package:nice_share/core/utils.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
 class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
@@ -43,10 +43,10 @@ class FindSendersCubit extends Cubit<Map<Sender, SenderStatus>> {
         peerName: peerName,
       );
 
-      if ((await myIps()).contains(datagram.address) ||
-          state.containsKey(sender)) {
-        return;
-      }
+      final isMyAddress = await Helper.localIpStream.first.then(
+        (value) => value.contains(datagram.address),
+      );
+      if (isMyAddress) return;
 
       emit(Map.unmodifiable({...state, sender: SenderStatus.idle}));
     });

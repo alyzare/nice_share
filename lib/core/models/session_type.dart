@@ -1,1 +1,1 @@
-enum SessionType { send, receive, webShare }
+enum SessionType { send, receive, webShare, webReceive }

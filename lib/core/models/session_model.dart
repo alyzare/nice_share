@@ -21,7 +21,7 @@ abstract class SessionModel {
   });
 
   static SessionModel fromMap(Map<String, dynamic> payload) {
-    final sessionId = payload["id"] as int? ?? -1;
+    final sessionId = payload["sessionId"] as int? ?? -1;
     final files =
         (payload["files"] as List?)?.map((e) => File(e)).toList() ?? [];
     final type = SessionType.values[payload["type"] as int];
@@ -41,6 +41,7 @@ abstract class SessionModel {
         sessionId: sessionId,
       ),
       .webShare => WebSessionModel(sessionId: sessionId, files: files),
+      .webReceive => throw UnimplementedError(),
     };
   }
 
@@ -54,6 +55,9 @@ abstract class SessionModel {
       .send => SendSessionModel(files: files),
       .receive => ReceiveSessionModel(sender: sender!),
       .webShare => WebSessionModel(files: files),
+      .webReceive => throw UnsupportedError(
+        "WebReceiveSession doesn't need blueprint on UI side!",
+      ),
     };
   }
 
@@ -73,6 +77,9 @@ abstract class SessionModel {
           sender: (this as ReceiveSessionModel).sender,
           files: files,
         ),
+        SessionType.webReceive => throw UnsupportedError(
+          "WebReceiveSession doesn't need upgrade on UI side!",
+        ),
       };
 
   @override
@@ -85,7 +92,7 @@ abstract class SessionModel {
   }
 
   Map<String, dynamic> get toMap => {
-    "id": sessionId,
+    "sessionId": sessionId,
     "files": files.map((e) => e.path).toList(),
     "type": type.index,
   };

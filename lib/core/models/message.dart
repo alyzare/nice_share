@@ -1,5 +1,3 @@
-import 'package:nice_share/core/utils.dart';
-
 sealed class Message {
   final MessageAction action;
   final int id;
@@ -16,7 +14,7 @@ sealed class Message {
     "payload": payload,
   };
 
-  static Message fromMap(Map<String, dynamic> data) {
+  factory Message.fromMap(Map<String, dynamic> data) {
     final type = MessageType.values[data["type"] as int];
     final action = MessageAction.values[data["action"] as int];
     final id = data["id"] as int;
@@ -38,11 +36,15 @@ sealed class Message {
             ..update("type", (value) => MessageType.values[value].name)
             ..update("action", (value) => MessageAction.values[value].name))
           .toString();
+
+  static int _messageId = 0;
+
+  static int get newId => _messageId++;
 }
 
 class RequestMessage extends Message {
   RequestMessage({required super.action, super.payload, int? id})
-    : super(id: id ?? newMessageId);
+    : super(id: id ?? Message.newId);
 
   @override
   MessageType get type => .request;
@@ -75,6 +77,8 @@ enum MessageAction {
   ensureServerRunning,
   getAll,
   serverStopped,
+  style,
+  askUploadPermission,
 }
 
 enum MessageType { request, response, idle }

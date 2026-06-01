@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:nice_share/core/helper.dart';
 import 'package:nice_share/core/models/file_type.dart';
-import 'package:nice_share/core/utils.dart';
 import 'package:path/path.dart';
 
 class FileHandler {
@@ -26,9 +26,7 @@ class FileHandler {
     });
   }
 
-  void receive() {
-
-  }
+  void receive() {}
 
   bool get fileExists => _file.existsSync();
 
@@ -36,13 +34,15 @@ class FileHandler {
 
   String get path => _file.path;
 
+  String get formattedSize => Helper.formattedSize(fileLength);
+
   static List<FileHandler> list(List<File> files) =>
       files.map((e) => FileHandler(file: e)).toList();
 
   static Future<List<FileHandler>> listToReceive(
     List<Map<String, dynamic>> data,
   ) async {
-    final downloadsDir = await getDownloadDirectory();
+    final downloadsDir = await Helper.downloadDirectory;
     if (downloadsDir == null) throw "No Directory";
     final future = data.map((e) async {
       final saveDir = Directory(

@@ -3,13 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nice_share/core/helper.dart';
 import 'package:nice_share/core/models/file_type.dart';
 import 'package:nice_share/core/models/peer_model.dart';
+import 'package:nice_share/core/models/upload_permission_request.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
+import 'package:nice_share/core/services/server_handlers/base_handler.dart';
 import 'package:nice_share/core/services/server_sessions/send_session.dart';
-import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
 import 'package:nice_share/core/services/server_sessions/web_session.dart';
-import 'package:nice_share/core/utils.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart' as shelf;
 import 'package:path/path.dart' as path;
@@ -17,7 +18,7 @@ import 'package:path/path.dart' as path;
 class CustomRouter {
   late final router = shelf.Router(notFoundHandler: _notFoundHandler);
 
-  CustomRouter({required this.sessionsManager}) {
+  CustomRouter({required this.serverHandler}) {
     router
       ..get('/session/<sessionId>', _sessionHandler)
       ..get('/session/<sessionId>/<fId>', _fileHandler)
@@ -25,18 +26,20 @@ class CustomRouter {
       ..get('/web/session/<sessionId>', _webHandler)
       ..get('/static/<file>', _staticHandler)
       ..get('/web/list', _webListHandler)
+      ..post("/web/upload-request", _uploadRequestHandler)
       ..post("/web/upload", _uploadHandler);
   }
 
-  final SessionsManager sessionsManager;
+  final BaseHandler serverHandler;
 
-  List<WebSession> get webSessions => sessionsManager.webSessions;
+  List<WebSession> get webSessions => serverHandler.sessionsManager.webSessions;
 
-  List<SendSession> get sendSessions => sessionsManager.sendSessions;
+  List<SendSession> get sendSessions =>
+      serverHandler.sessionsManager.sendSessions;
 
   Future<Response> _sessionHandler(Request request, String sessionId) async {
     final id = int.tryParse(sessionId);
-    final session = sessionsManager.sendSessions
+    final session = serverHandler.sessionsManager.sendSessions
         .where((element) => element.sessionId == id)
         .whereType<SendSession>()
         .firstOrNull;
@@ -240,7 +243,7 @@ class CustomRouter {
 
     for (final fileHandler in session.fileHandlers) {
       final fileName = fileHandler.fileName;
-      final fileSize = formattedSize(fileHandler.fileLength);
+      final fileSize = fileHandler.formattedSize;
 
       final encodedName = Uri.encodeComponent(fileName);
       stringBuilder.write(
@@ -250,16 +253,8 @@ class CustomRouter {
     stringBuilder.write('</ul>');
     final listHtml = stringBuilder.toString();
     final finalContent = content
-        .replaceFirst("<dart_title />", "<h2>Nice Share</h2>")
-        .replaceAll(
-          "<dart_form />",
-          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
-        )
-        .replaceFirst("<dart />", listHtml)
-        .replaceFirst(
-          "<dart_script />",
-          '<script src="/static/upload.js" defer></script>',
-        );
+        .replaceFirst("<dart_title/>", "<h2>Nice Share</h2>")
+        .replaceFirst("<dart/>", listHtml);
 
     return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
   }
@@ -277,16 +272,8 @@ class CustomRouter {
     stringBuilder.write('</ul>');
     final listHtml = stringBuilder.toString();
     final finalContent = content
-        .replaceFirst("<dart_title />", "<h2>Sessions</h2>")
-        .replaceFirst("<dart />", listHtml)
-        .replaceFirst(
-          "<dart_script />",
-          '<script src="/static/upload.js" defer></script>',
-        )
-        .replaceAll(
-          "<dart_form />",
-          '<form id="uploadForm"><input type="file" name="file" multiple required /><button>Upload</button></form>',
-        );
+        .replaceFirst("<dart_title/>", "<h2>Sessions</h2>")
+        .replaceFirst("<dart/>", listHtml);
 
     return Response.ok(finalContent, headers: {'Content-Type': 'text/html'});
   }
@@ -301,7 +288,21 @@ class CustomRouter {
 
     final fileName = Uri.decodeComponent(fileNameEncoded);
 
-    final downloadsDir = await getDownloadDirectory();
+    final sessionId = int.tryParse(request.headers["x-session-id"] ?? "");
+
+    if (sessionId == null) {
+      return Response.unauthorized({
+        "message": "The file has not been accepted!",
+      });
+    }
+
+    final token = request.headers["x-upload-token"];
+
+    if (token == null) {
+      return Response.unauthorized({"message": "Token is not provided!"});
+    }
+
+    final downloadsDir = await Helper.downloadDirectory;
     if (downloadsDir == null) {
       return Response.internalServerError(
         body: jsonEncode({'message': 'Cannot find downloads directory'}),
@@ -342,7 +343,7 @@ class CustomRouter {
       return Response.forbidden('Invalid path');
     }
 
-    final String content;
+    String content;
     try {
       content = await rootBundle.loadString('assets/static/$file');
     } catch (_) {
@@ -389,5 +390,32 @@ class CustomRouter {
     } catch (_) {
       return Response.notFound('Not found');
     }
+  }
+
+  Future<Response> _uploadRequestHandler(Request request) async {
+    final json =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final filesDetails = (json["files"] as List)
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    final permissionRequest = UploadPermissionRequest.fromList(filesDetails);
+    final session = await serverHandler.sessionsManager.requestUpload(
+      permissionRequest: permissionRequest,
+    );
+
+    if (session == null) {
+      return Response.unauthorized({
+        "accepted": false,
+        "message": "Permission denied",
+      });
+    }
+
+    return Response.ok({
+      "accepted": true,
+      "sessionId": "${session.sessionId}",
+      "token": session.token,
+      "message": "Accepted",
+    });
   }
 }

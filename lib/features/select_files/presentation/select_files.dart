@@ -3,47 +3,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:nice_share/core/utils.dart';
+import 'package:nice_share/core/helper.dart';
 import 'package:path/path.dart' as path;
 
 import '../logic/select_files_cubit.dart';
 
-class SelectFiles extends StatefulWidget {
-  final bool isWeb;
-
-  const SelectFiles._({this.isWeb = false});
-
-  static Future<void> show(BuildContext context, {bool isWeb = false}) {
-    return Platform.isAndroid
-        ? showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => SelectFiles._(isWeb: isWeb),
-          )
-        : showDialog(
-            context: context,
-            builder: (_) => SelectFiles._(isWeb: isWeb),
-          );
-  }
-
-  @override
-  State<SelectFiles> createState() => _SelectFilesState();
-}
-
-class _SelectFilesState extends State<SelectFiles> {
-  late final _cubit = SelectFilesCubit(context.read(), widget.isWeb);
-
-  @override
-  void dispose() {
-    _cubit.close();
-    super.dispose();
-  }
+class SelectFiles extends StatelessWidget {
+  const SelectFiles({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final content = BlocConsumer<SelectFilesCubit, SelectFileState>(
-      bloc: _cubit,
+    return BlocConsumer<SelectFilesCubit, SelectFileState>(
       listenWhen: (_, current) => current is SessionCreated,
       listener: (_, state) {
         if (state is SessionCreated) {
@@ -51,74 +21,58 @@ class _SelectFilesState extends State<SelectFiles> {
         }
       },
       builder: (context, state) {
-        final list = state.files.isNotEmpty
-            ? ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: state.files.length + (state is LoadingFiles ? 1 : 0),
-                separatorBuilder: (_, _) => const Divider(),
-                itemBuilder: (context, index) {
-                  if (state is LoadingFiles && index == state.files.length) {
-                    return Center(
-                      child: LoadingAnimationWidget.progressiveDots(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 20,
-                      ),
-                    );
-                  }
-
-                  final file = state.files[index];
-                  return ListTile(
-                    title: Text(path.basename(file.path)),
-                    subtitle: Text(formattedSize(file.lengthSync())),
-                    trailing: IconButton(
-                      onPressed: () => _cubit.removeFile(file),
-                      icon: const Icon(Icons.close),
-                    ),
-                  );
-                },
-              )
-            : Center(
-                child: state is LoadingFiles
-                    ? const CircularProgressIndicator()
-                    : const Text("No files selected"),
-              );
-
         return Column(
           children: [
-            _Header(),
-            Expanded(child: list),
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  _Header(),
+                  state.files.isNotEmpty
+                      ? SliverList.builder(
+                          itemCount:
+                              state.files.length +
+                              (state is LoadingFiles ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (state is LoadingFiles &&
+                                index == state.files.length) {
+                              return Center(
+                                child: LoadingAnimationWidget.progressiveDots(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  size: 20,
+                                ),
+                              );
+                            }
+
+                            final file = state.files[index];
+                            return ListTile(
+                              title: Text(path.basename(file.path)),
+                              subtitle: Text(
+                                Helper.formattedSize(file.lengthSync()),
+                              ),
+                              trailing: IconButton(
+                                onPressed: () => context
+                                    .read<SelectFilesCubit>()
+                                    .removeFile(file),
+                                icon: const Icon(Icons.close),
+                              ),
+                            );
+                          },
+                        )
+                      : SliverFillRemaining(
+                          child: Center(child: Text("No files selected")),
+                        ),
+                ],
+              ),
+            ),
             LinearProgressIndicator(
               backgroundColor: Colors.transparent,
               value: state.isLoadingFiles ? null : 1,
               minHeight: 1,
             ),
-            _Actions(isLoading: state.isLoadingFiles, cubit: _cubit),
+            _Actions(isLoading: state.isLoadingFiles),
           ],
-        );
-      },
-    );
-
-    if (!Platform.isAndroid) {
-      return Dialog(
-        constraints: const BoxConstraints(maxHeight: 400, maxWidth: 400),
-        clipBehavior: Clip.antiAlias,
-        child: content,
-      );
-    }
-
-    // Bottom sheet
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.35,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (_, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceBright,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: content,
         );
       },
     );
@@ -129,27 +83,29 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Platform.isAndroid
-        ? Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(999),
+        ? SliverAppBar(
+            pinned: true,
+            leading: SizedBox.shrink(),
+            shape: RoundedRectangleBorder(
+              borderRadius: .vertical(top: Radius.circular(25)),
+            ),
+            flexibleSpace: Column(
+              mainAxisAlignment: .spaceEvenly,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
+                Text(
                   'Select files to send',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
+              ],
+            ),
           )
         : SizedBox(
             height: 40,
@@ -165,12 +121,12 @@ class _Header extends StatelessWidget {
 
 class _Actions extends StatelessWidget {
   final bool isLoading;
-  final SelectFilesCubit cubit;
 
-  const _Actions({required this.isLoading, required this.cubit});
+  const _Actions({required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<SelectFilesCubit>();
     final content = Row(
       children: [
         Expanded(

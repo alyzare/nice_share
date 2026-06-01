@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/core/helper.dart';
 import 'package:nice_share/core/models/message.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/sessions_event.dart';
+import 'package:nice_share/core/models/upload_permission_request.dart';
 import 'package:nice_share/core/network/custom_server.dart';
 import 'package:nice_share/core/services/server_bridge/server_bridge.dart';
 import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
@@ -17,11 +19,11 @@ part 'windows_handler.dart';
 mixin BaseHandler {
   final server = Completer<CustomServer>();
 
-  final Map<int, Completer<bool>> permissionCompleters = {};
+  late final sessionsManager = SessionsManager(this);
+
+  final Map<int, Completer<bool>> _permissionCompleters = {};
 
   Future<int> get serverPort async => (await server.future).port;
-
-  SessionsManager get sessionsManager;
 
   void sendDataToUI(Message message);
 
@@ -31,23 +33,37 @@ mixin BaseHandler {
     required PeerModel peer,
     required int sessionId,
   }) {
-    final completer = Completer<bool>();
-
     final message = RequestMessage(
       action: .askPermission,
-      payload: {"id": sessionId, "peer": peer.toMap},
+      payload: {"sessionId": sessionId, "peer": peer.toMap},
     );
 
-    permissionCompleters[message.id] = completer;
+    final completer = Completer<bool>();
+    _permissionCompleters[message.id] = completer;
 
     sendDataToUI(message);
 
     return completer.future.timeout(.new(seconds: 15), onTimeout: () => false);
   }
 
-  Future<void> start() async => server.complete(
-    await CustomServer.start(sessionManager: sessionsManager),
-  );
+  Future<bool> askUploadPermission({
+    required UploadPermissionRequest permissionRequest,
+  }) async {
+    final message = RequestMessage(
+      action: .askUploadPermission,
+      payload: {"files": permissionRequest.toList},
+    );
+
+    final completer = Completer<bool>();
+    _permissionCompleters[message.id] = completer;
+
+    sendDataToUI(message);
+
+    return completer.future.timeout(.new(seconds: 15), onTimeout: () => false);
+  }
+
+  Future<void> start() async =>
+      server.complete(await CustomServer.start(serverHandler: this));
 
   Future<void> onReceiveData(dynamic data) async {
     if (data is! Map<String, dynamic> ||
@@ -85,27 +101,38 @@ mixin BaseHandler {
     ),
   );
 
+  int get sessionIdCounter => _sessionIdCounter++;
+
+  int _sessionIdCounter = 1;
+
+  Map<String, dynamic> get styles => _styles;
+
+  Map<String, dynamic> _styles = {};
+
   Future<void> _handleRequest(RequestMessage request) async {
     final payload = <String, dynamic>{};
 
     switch (request.action) {
       case .ensureServerRunning:
         payload["port"] = await serverPort;
+        payload["ip"] = await Helper.localIpStream.first.then(
+          (value) => value.first.rawAddress,
+        );
       case .addSession:
-        final id = await sessionsManager.addEvent(
-          SessionsEvent.fromPayload(action: .add, payload: payload),
+        final sessionId = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .add, payload: request.payload!),
         );
-        payload["id"] = id;
+        payload["sessionId"] = sessionId;
       case .stopSession:
-        final id = await sessionsManager.addEvent(
-          SessionsEvent.fromPayload(action: .stop, payload: payload),
+        final sessionId = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .stop, payload: request.payload!),
         );
-        payload["id"] = id;
+        payload["sessionId"] = sessionId;
       case .updateSession:
-        final id = await sessionsManager.addEvent(
-          SessionsEvent.fromPayload(action: .update, payload: payload),
+        final sessionId = await sessionsManager.addEvent(
+          SessionsEvent.fromPayload(action: .update, payload: request.payload!),
         );
-        payload["id"] = id;
+        payload["sessionId"] = sessionId;
       case .getAll:
         final sessions = sessionsManager.sessions;
         payload["sessions"] = sessions
@@ -121,7 +148,7 @@ mixin BaseHandler {
   void _handleResponse(ResponseMessage response) {
     switch (response.action) {
       case .askPermission:
-        permissionCompleters[response.id]?.complete(
+        _permissionCompleters[response.id]?.complete(
           (response.payload?["answer"] as bool?) ?? false,
         );
       case _:
@@ -129,7 +156,11 @@ mixin BaseHandler {
   }
 
   void _handleIdleMessage(IdleMessage message) {
-    throw UnimplementedError();
+    switch (message.action) {
+      case .style:
+        _styles = message.payload ?? {};
+      case _:
+    }
   }
 
   static Future<void> _startAndroidService() async {

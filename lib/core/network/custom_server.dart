@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'package:nice_share/core/services/server_sessions/sessions_manager.dart';
+import 'package:nice_share/core/services/server_handlers/base_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 
@@ -14,15 +14,15 @@ class CustomServer {
 
   final StreamController<String> _logController;
 
-  final SessionsManager sessionsManager;
+  final BaseHandler serverHandler;
 
   Stream<String> get requestLogs => _logController.stream;
 
   static Future<CustomServer> start({
-    required SessionsManager sessionManager,
+    required BaseHandler serverHandler,
   }) async {
     try {
-      final router = CustomRouter(sessionsManager: sessionManager);
+      final router = CustomRouter(serverHandler: serverHandler);
       final logController = StreamController<String>.broadcast();
       final handler = Pipeline()
           .addMiddleware(
@@ -34,7 +34,7 @@ class CustomServer {
           )
           .addHandler(router.router.call);
       final server = await serve(handler, InternetAddress.anyIPv4, 8088);
-      return CustomServer._(server, logController, sessionManager);
+      return CustomServer._(server, logController, serverHandler);
     } catch (e) {
       log(e.toString());
       rethrow;
@@ -46,9 +46,5 @@ class CustomServer {
     await _logController.close();
   }
 
-  CustomServer._(
-    this._server,
-    this._logController,
-    this.sessionsManager,
-  );
+  CustomServer._(this._server, this._logController, this.serverHandler);
 }

@@ -13,12 +13,12 @@ class SelectFilesCubit extends Cubit<SelectFileState> {
   final bool isWeb;
   final SessionsCubit sessionsCubit;
 
-  SelectFilesCubit(this.sessionsCubit, [this.isWeb = false])
+  SelectFilesCubit(this.sessionsCubit, {this.isWeb = false})
     : super(LoadedFiles(files: List.unmodifiable([])));
 
   void addFiles() async {
     emit(LoadingFiles(files: state.files));
-    final files = await FilePicker.platform.pickFiles(allowMultiple: true);
+    final files = await FilePicker.pickFiles(allowMultiple: true);
 
     emit(
       LoadedFiles(

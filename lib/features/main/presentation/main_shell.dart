@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:nice_share/core/components/responsive_modal.dart';
 import 'package:nice_share/features/history/presentation/history_page.dart';
 import 'package:nice_share/features/home/presentation/home_page.dart';
 import 'package:nice_share/features/main/presentation/components/animated_title.dart';
+import 'package:nice_share/features/main/presentation/components/exit_modal.dart';
 import 'package:nice_share/features/main/presentation/components/my_nav_bar.dart';
 import 'package:nice_share/features/main/presentation/components/pages_stack.dart';
 import 'package:nice_share/features/sessions/presentation/sessions_page.dart';
@@ -31,6 +33,14 @@ class _MainShellState extends State<MainShell> {
             curve: Curves.easeIn,
           );
         } else {
+          final exitResult =
+              await context.showResponsiveModal<bool>(
+                child: ExitModal(),
+              ) ??
+              false;
+
+          if (!exitResult) return;
+
           await FlutterForegroundTask.stopService();
           exit(0);
         }

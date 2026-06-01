@@ -2,9 +2,6 @@ part of 'base_handler.dart';
 
 class WindowsHandler with BaseHandler {
   @override
-  late final sessionsManager = SessionsManager(handler: this);
-
-  @override
   Future<void> close() async {
     _messageController.close();
   }

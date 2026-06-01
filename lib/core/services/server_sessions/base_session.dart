@@ -31,9 +31,6 @@ mixin BaseSession {
 
     for (final file in fileHandlers) {
       file.deleteIfCached(cacheDir);
-      // if (file.path.startsWith(cacheDir.path)) {
-      //   file.delete();
-      // }
     }
   }
 

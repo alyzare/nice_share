@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:nice_share/core/models/message.dart';
 import 'package:nice_share/core/models/peer_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/models/upload_permission_request.dart';
 import 'package:nice_share/core/services/server_handlers/base_handler.dart';
 import 'package:nice_share/features/sessions/logic/sessions_cubit.dart';
 
@@ -37,13 +38,20 @@ class ServerBridge {
       case .askPermission:
         if (message.payload == null) return;
         final answer = await _sessionsCubit?.askPermission(
-          sessionId: message.payload!["id"] as int,
+          sessionId: message.payload!["sessionId"] as int,
           peer: PeerModel.fromMap(
             message.payload!["peer"] as Map<String, dynamic>,
           ),
         );
-        payload.addAll({"answer": answer ?? false});
-
+        payload["answer"] = answer ?? false;
+      case .askUploadPermission:
+        if (message.payload == null) return;
+        final answer = await _sessionsCubit?.askUploadPermission(
+          request: UploadPermissionRequest.fromList(
+            message.payload!["files"],
+          ),
+        );
+        payload["answer"] = answer ?? false;
       case _:
     }
     final response = ResponseMessage.ofRequest(message, payload: payload);
@@ -76,22 +84,28 @@ class ServerBridge {
     );
     final response = await _request(message);
 
-    if ((response?.payload!["id"] as int? ?? -1) > 0) {
+    if ((response?.payload!["sessionId"] as int? ?? -1) > 0) {
       final peersMap = response!.payload!["peers"] as Map<Uint8List, String?>?;
-      return sessionBlueprint.upgrade(response.payload!["id"] as int, peersMap);
+      return sessionBlueprint.upgrade(
+        response.payload!["sessionId"] as int,
+        peersMap,
+      );
     }
     return null;
   }
 
   Future<void> stopSession(int sessionId) async {
     await _request(
-      RequestMessage(action: .stopSession, payload: {"id": sessionId}),
+      RequestMessage(action: .stopSession, payload: {"sessionId": sessionId}),
     );
   }
 
   Future<void> ensureServerRunning() async {
     final result = await _request(RequestMessage(action: .ensureServerRunning));
     _port = result!.payload!["port"] as int;
+    _address = InternetAddress.fromRawAddress(
+      result.payload!["ip"] as Uint8List,
+    );
     debugPrint(_port.toString());
   }
 
@@ -106,13 +120,30 @@ class ServerBridge {
         .toList(growable: false);
   }
 
+  void setWebStyle(ThemeData theme) {
+    final payload = {
+      "primaryColor":
+          "#${theme.colorScheme.primary.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}",
+      "secondaryColor":
+          "#${theme.colorScheme.secondary.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}",
+      "backgroundColor":
+          "#${theme.colorScheme.surface.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}",
+    };
+
+    sendDataToServer(IdleMessage(action: .style, payload: payload));
+  }
+
   late final int _port;
+
+  late final InternetAddress _address;
 
   final Map<int, Completer<ResponseMessage>> _completers = {};
 
   SessionsCubit? _sessionsCubit;
 
   int get port => _port;
+
+  InternetAddress get address => _address;
 
   Future<ResponseMessage?> _request(RequestMessage message) {
     final completer = Completer<ResponseMessage>();

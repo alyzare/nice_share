@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nice_share/core/models/peer_model.dart';
+import 'package:nice_share/core/models/permission_request.dart';
 import 'package:nice_share/core/models/send_session_model.dart';
 import 'package:nice_share/core/models/session_model.dart';
+import 'package:nice_share/core/models/upload_permission_request.dart';
 import 'package:nice_share/core/services/server_bridge/server_bridge.dart';
 
 class SessionsCubit extends Cubit<List<SessionModel>> {
@@ -16,7 +18,14 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
 
   final List<StreamSubscription<PermissionRequest>> _subs = [];
 
-  final _permissionRequestsController = StreamController<PermissionRequest>();
+  final Map<UploadPermissionRequest, Completer<bool>>
+  _uploadPermissionCompleters = {};
+
+  final _permissionRequestsController =
+      StreamController<PermissionRequest>.broadcast();
+
+  final _uploadPermissionRequestsController =
+      StreamController<UploadPermissionRequest>.broadcast();
 
   @override
   void onChange(Change<List<SessionModel>> change) {
@@ -45,6 +54,9 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
 
   Stream<PermissionRequest> get permissionRequests =>
       _permissionRequestsController.stream;
+
+  Stream<UploadPermissionRequest> get uploadPermissionRequests =>
+      _uploadPermissionRequestsController.stream;
 
   void updateSessions() async {
     final sessions = await server.getSessions();
@@ -85,6 +97,17 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
     return answer ?? false;
   }
 
+  Future<bool> askUploadPermission({
+    required UploadPermissionRequest request,
+  }) async {
+    final completer = Completer<bool>();
+    _uploadPermissionCompleters[request] = completer;
+
+    _uploadPermissionRequestsController.add(request);
+
+    return completer.future.timeout(.new(seconds: 10), onTimeout: () => false);
+  }
+
   void setPermission(PermissionRequest request, bool answer) {
     final session = state
         .whereType<SendSessionModel>()
@@ -93,14 +116,14 @@ class SessionsCubit extends Cubit<List<SessionModel>> {
     session?.setPermission(peer: request.peer, answer: answer);
   }
 
+  void setUploadPermission(UploadPermissionRequest request, bool answer) {
+    final completer = _uploadPermissionCompleters[request];
+    if (completer == null) return;
+
+    completer.complete(answer);
+  }
+
   void refresh(List<SessionModel> list) {
     emit(List.unmodifiable(list));
   }
-}
-
-class PermissionRequest {
-  final int sessionId;
-  final PeerModel peer;
-
-  PermissionRequest({required this.sessionId, required this.peer});
 }

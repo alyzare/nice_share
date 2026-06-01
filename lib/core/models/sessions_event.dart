@@ -5,10 +5,8 @@ sealed class SessionsEvent {
     required RequestAction action,
     required Map<String, dynamic> payload,
   }) {
-    assert(payload["action"] is int);
-    final action = RequestAction.values[payload["action"]];
     switch (action) {
-      case .add:
+      case .add://TODO: bug here
         return SessionAddedEvent(SessionModel.fromMap(payload));
       case .stop:
         return SessionRemovedEvent(payload["id"] as int?);

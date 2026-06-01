@@ -3,7 +3,6 @@ import 'package:nice_share/core/models/session_type.dart';
 import 'package:nice_share/core/network/handlers/file_handler.dart';
 import 'package:nice_share/core/network/request_helper.dart';
 import 'package:nice_share/core/services/server_sessions/base_session.dart';
-import 'package:nice_share/core/utils.dart';
 
 class ReceiveSession with BaseSession {
   @override
@@ -40,7 +39,10 @@ class ReceiveSession with BaseSession {
     close();
   }
 
-  static Future<ReceiveSession> getFromSender(Sender sender) async {
+  static Future<ReceiveSession> getFromSender(
+    Sender sender, {
+    required int id,
+  }) async {
     final requestHelper = RequestHelper(sender);
 
     try {
@@ -52,7 +54,7 @@ class ReceiveSession with BaseSession {
       final files = await FileHandler.listToReceive(filesInfo);
 
       return ReceiveSession._(
-        sessionId: newSessionId,
+        sessionId: id,
         fileHandlers: files,
         sender: sender,
         requestHelper: requestHelper,

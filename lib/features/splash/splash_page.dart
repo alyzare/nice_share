@@ -46,6 +46,7 @@ class _SplashPageState extends State<SplashPage> {
     await BaseHandler.startServerService();
     try {
       await ServerBridge.instance.ensureServerRunning();
+      if (mounted) ServerBridge.instance.setWebStyle(Theme.of(context));
       if (mounted) {
         Navigator.of(
           context,
